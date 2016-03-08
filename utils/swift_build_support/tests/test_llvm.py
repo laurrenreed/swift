@@ -11,7 +11,7 @@
 import os
 import unittest
 
-from swift_build_support.clang import host_clang
+from swift_build_support.llvm import host_clang, _first_common_executables
 
 
 class HostClangTestCase(unittest.TestCase):
@@ -25,6 +25,18 @@ class HostClangTestCase(unittest.TestCase):
         # number.
         self.assertTrue(os.path.split(clang.cc)[-1].startswith('clang'))
         self.assertTrue(os.path.split(clang.cxx)[-1].startswith('clang++'))
+
+    def test_found_executables_match(self):
+        # Test that the raw incovation of _first_common_executables
+        # either returns None or matching paths.
+        exec_names = ['clang', 'clang++']
+        suffixes = ['', '-3.8', '-3.7', '-3.6']
+        paths = _first_common_executables(exec_names, suffixes)
+        self.assertTrue(len(paths) == len(exec_names))
+
+        exec_names = ['ls', 'a-tool-that-does-not-exist']
+        paths = _first_common_executables(exec_names, suffixes)
+        self.assertIsNone(paths)
 
 
 if __name__ == '__main__':

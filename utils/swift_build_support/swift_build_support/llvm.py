@@ -44,6 +44,32 @@ def _freebsd_release_date():
     except subprocess.CalledProcessError:
         return None
 
+def _first_common_executables(names, suffixes):
+    """
+    Return a list of resolved paths where each path has the same suffix.
+    If there is no common version of all binaries found, return None.
+    """
+    for suffix in suffixes:
+        paths = []
+        for name in names:
+            path = which(name + suffix)
+            if not path:
+                break
+            paths.append(path)
+        if len(paths) == len(names):
+            return paths
+    return None
+
+def _first_executable(name, suffixes):
+    """
+    Return a resolved path for a binary, searching in order of the given
+    suffixes.
+    If no paths are found, return None.
+    """
+    paths = _first_common_executables([name], suffixes)
+    if paths:
+        return paths[0]
+    return None
 
 def _first_clang(suffixes):
     """
@@ -52,14 +78,24 @@ def _first_clang(suffixes):
 
     If no Clang executables are found, return None.
     """
-    for suffix in suffixes:
-        cc_path = which('clang{}'.format(suffix))
-        cxx_path = which('clang++{}'.format(suffix))
-        if cc_path and cxx_path:
-            return CompilerExecutable(cc=cc_path, cxx=cxx_path)
+    paths = _first_common_executables(['clang', 'clang++'], suffixes)
+    if paths:
+        return CompilerExecutable(cc=paths[0], cxx=paths[1])
 
     return None
 
+
+def host_executable(name, xcrun_toolchain='default'):
+    """
+    Return the appropriate path for the executable on the host platform.
+    If no appropriate executables can be found, return None.
+    """
+    if platform.system() == 'Darwin':
+        return xcrun.find(xcrun_toolchain, name)
+    elif platform.system() == 'FreeBSD':
+        return _first_executable(name, ['', '38', '37', '36', '35'])
+    else:
+        return _first_executable(name, ['', '-3.8', '-3.7', '-3.6', '-3.5'])
 
 def host_clang(xcrun_toolchain):
     """
