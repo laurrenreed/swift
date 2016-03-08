@@ -17,6 +17,14 @@ import pipes
 import subprocess
 
 from multiprocessing import Process
+import sys
+import logging
+
+# hack to import SwiftBuildSupport
+support_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                           '..', 'swift_build_support')
+sys.path.append(support_dir)
+from swift_build_support.llvm import host_executable
 
 
 class ProfdataMergerProcess(Process):
@@ -28,6 +36,7 @@ class ProfdataMergerProcess(Process):
         self.profdata_path = os.path.join(config.tmp_dir,
                                           "%s.profdata" % self.name)
         self.profdata_tmp_path = self.profdata_path + ".copy"
+        self.llvm_profdata_path = host_executable('llvm-profdata')
 
     def report(self, msg, level=logging.INFO):
         """Convenience method for reporting status from the workers."""
@@ -46,10 +55,9 @@ class ProfdataMergerProcess(Process):
             os.rename(self.profdata_path, self.profdata_tmp_path)
             self.filename_buffer.append(self.profdata_tmp_path)
         cleaned_files = ' '.join(pipes.quote(f) for f in self.filename_buffer)
-        # FIXME: This doesn't necessarily always line up with the version
-        #        of clang++ used to build the binaries.
-        llvm_cmd = ("xcrun llvm-profdata merge -o %s %s"
-                    % (self.profdata_path, cleaned_files))
+        llvm_cmd = ("%s merge -o %s %s"
+                    % (self.llvm_profdata_path,
+                        self.profdata_path, cleaned_files))
         self.report(llvm_cmd)
         ret = subprocess.call(llvm_cmd, shell=True)
         if ret != 0:
