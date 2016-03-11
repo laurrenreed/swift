@@ -80,7 +80,7 @@ namespace covcompare {
     return files;
   }
   
-  map<string, File> fileMapFromYAML(string yamlFile) {
+  map<std::string, File> fileMapFromYAML(string yamlFile) {
     auto buffer = MemoryBuffer::getFile(yamlFile);
     if (auto error = buffer.getError()) {
       exitWithErrorCode(error);
@@ -91,7 +91,7 @@ namespace covcompare {
     if (auto error = yin.error()) {
       exitWithErrorCode(error);
     }
-    map<string, File> fileMap;
+    map<std::string, File> fileMap;
     for (auto &file : files) {
       fileMap[file.name] = file;
     }
@@ -109,18 +109,21 @@ namespace covcompare {
     auto oldFiles = fileMapFromYAML(oldFile);
     auto newFiles = fileMapFromYAML(newFile);
     for (auto &iter : newFiles) {
-      auto idx = find(options.coveredFiles.begin(),
-                      options.coveredFiles.end(),
-                      iter.first);
-      if (options.coveredFiles.size() && idx == options.coveredFiles.end()) {
+      if (options.coveredDir != "" &&
+          !StringRef(iter.first).startswith(options.coveredDir)) {
         continue;
       }
+      std::string parentPath = sys::path::parent_path(options.coveredDir);
+      std::string filename = iter.first.substr(parentPath.size(),
+                                               iter.first.size() -
+                                               parentPath.size());
       shared_ptr<File> oldFile;
       auto old = oldFiles.find(iter.first);
       if (old != oldFiles.end()) {
-        oldFile = make_shared<File>(old->second);
+        oldFile = make_shared<File>(filename, old->second.functions);
       }
-      auto c = make_shared<FileComparison>(oldFile, make_shared<File>(iter.second));
+      auto c = make_shared<FileComparison>(oldFile,
+                make_shared<File>(filename, iter.second.functions));
       comparisons.push_back(c);
     }
 
@@ -134,29 +137,14 @@ namespace covcompare {
   }
 
   void ProfdataCompare::compare() {
-    auto output = options.output;
-    
-    if (output == Options::HTML) {
-      HTMLWriter(options.outputFilename).write(*this);
-      return;
+    switch (options.output) {
+      case Options::HTML:
+        HTMLWriter(options.outputFilename).write(*this);
+        break;
+      case Options::Markdown:
+        MarkdownWriter(comparisons).write(*os);
+        break;
     }
-    
-    Column fnCol("Filename");
-    Column prevCol("Previous Coverage", Column::Alignment::Center);
-    Column currCol("Current Coverage", Column::Alignment::Center);
-    Column diffCol("Coverage Difference", Column::Alignment::Center);
-    for (auto &cmp : comparisons) {
-      string oldPercentage = cmp->oldItem ?
-      formattedDouble(cmp->oldItem->coveragePercentage()) : "N/A";
-      string newPercentage =
-      formattedDouble(cmp->newItem->coveragePercentage());
-      fnCol.add(cmp->newItem->name);
-      prevCol.add(oldPercentage);
-      currCol.add(newPercentage);
-      diffCol.add(cmp->formattedCoverageDifference());
-    }
-    
-    MarkdownWriter({ fnCol, prevCol, currCol, diffCol }).write(*os);
   }
   
   int compareMain(int argc, const char *argv[]) {
@@ -170,11 +158,9 @@ namespace covcompare {
                                  cl::desc("<old yaml file>"), cl::Required);
     cl::opt<std::string> newFile(cl::Positional,
                                  cl::desc("<new yaml file>"), cl::Required);
-    cl::list<std::string> coveredFiles("c", cl::Positional,
-                                       cl::PositionalEatsArgs,
+    cl::opt<std::string> coveredDir("covered-dir", cl::Optional,
                                        cl::desc("Restrict output to a certain "
-                                                "set of covered files"),
-                                       cl::ZeroOrMore);
+                                                "covered subdirectory"));
     cl::opt<Options::Format> format("f",
                                     cl::desc("Format to output comparison"),
                                     cl::values(clEnumValN(Options::HTML,
@@ -187,7 +173,7 @@ namespace covcompare {
                                     cl::init(Options::Markdown));
     cl::ParseCommandLineOptions(argc, argv);
     
-    Options options(coveredFiles,
+    Options options(coveredDir,
                     format.getValue(),
                     output);
     
