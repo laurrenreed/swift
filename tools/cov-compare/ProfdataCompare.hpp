@@ -39,19 +39,14 @@ namespace covcompare {
       Markdown
     } Format;
     
-    /// The files that this program should consider when comparing coverage.
-    std::string coveredDir;
-    
     /// The output format.
     Format output;
     
     /// The filename (or directory, if the output format is HTML) to output.
     std::string outputFilename;
     
-    Options(std::string coveredDir, Format output,
-            std::string outputFilename)
-    : coveredDir(coveredDir), output(output),
-      outputFilename(outputFilename) {}
+    Options(Format output, std::string outputFilename)
+    : output(output), outputFilename(outputFilename) {}
   };
   
   struct Region {
@@ -212,7 +207,8 @@ namespace covcompare {
     
     /// \returns A map of filenames to File
     /// objects that are covered in this profdata.
-    std::map<std::string, std::shared_ptr<File>> fileMap();
+    std::map<std::string, std::shared_ptr<File>>
+    fileMap(std::string coveredDir);
     
     CoverageFilePair(std::string filename, std::string binary) :
     filename(filename), binary(binary) {}

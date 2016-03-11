@@ -30,6 +30,35 @@ namespace md {
     return "[" + desc + "](" + url + ")";
   }
 }
+  tuple<double, double>
+  coveragePercentages(vector<shared_ptr<FileComparison>> &comparisons) {
+    double oldRegionCount = 0;
+    double newRegionCount = 0;
+    double oldRegionsExecuted = 0;
+    double newRegionsExecuted = 0;
+    for (auto &cmp : comparisons) {
+      if (auto old = cmp->oldItem) {
+        for (auto &func : old->functions) {
+          for (auto &region : func.regions) {
+            oldRegionCount++;
+            if (region.executionCount > 0) {
+              oldRegionsExecuted++;
+            }
+          }
+        }
+      }
+      for (auto &func : cmp->newItem->functions) {
+        for (auto &region : func.regions) {
+          newRegionCount++;
+          if (region.executionCount > 0) {
+            newRegionsExecuted++;
+          }
+        }
+      }
+    }
+    return { (newRegionsExecuted / newRegionCount) * 100.0,
+             (oldRegionsExecuted / oldRegionCount) * 100.0 };
+  }
 
   void MarkdownWriter::writeTable(raw_ostream &os) {
     os << "| ";
@@ -87,5 +116,38 @@ namespace md {
   void MarkdownWriter::write(raw_ostream &os) {
     writeAnalysis(os);
     writeTable(os);
+  }
+  MarkdownWriter::MarkdownWriter(vector<shared_ptr<FileComparison>> comparisons)
+  : comparisons(comparisons) {
+    Column fnCol("Filename");
+    Column prevCol("Previous Coverage", Column::Alignment::Center);
+    Column currCol("Current Coverage", Column::Alignment::Center);
+    Column diffCol("Coverage Difference", Column::Alignment::Center);
+    for (auto &cmp : comparisons) {
+      dbgs() << "Creating column for: " << cmp->newItem->name << "\n";
+      std::string oldPercentage = cmp->oldItem ?
+      formattedDouble(cmp->oldItem->coveragePercentage()) : "N/A";
+      std::string newPercentage =
+      formattedDouble(cmp->newItem->coveragePercentage());
+      fnCol.add(md::code(cmp->newItem->name));
+      prevCol.add(oldPercentage);
+      currCol.add(newPercentage);
+      diffCol.add(cmp->formattedCoverageDifference());
+    }
+    auto start = clock();
+    auto coverages = coveragePercentages(comparisons);
+    auto end = clock();
+    outs() << "Took " << (double(end - start) / double(CLOCKS_PER_SEC))
+           << "s to compute coverage\n";
+    auto oldTotal = get<0>(coverages);
+    auto newTotal = get<1>(coverages);
+    fnCol.elements.insert(fnCol.elements.begin(), "Total");
+    prevCol.elements.insert(prevCol.elements.begin(),
+                            formattedDouble(oldTotal));
+    currCol.elements.insert(currCol.elements.begin(),
+                            formattedDouble(oldTotal));
+    diffCol.elements.insert(diffCol.elements.begin(),
+                            formattedDouble(newTotal - oldTotal));
+    this->columns = { fnCol, prevCol, currCol, diffCol };
   }
 }

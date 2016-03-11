@@ -71,43 +71,7 @@ namespace covcompare {
     /// Writes this table to a stream.
     void write(llvm::raw_ostream &os);
     
-    MarkdownWriter(std::vector<std::shared_ptr<FileComparison>> comparisons)
-    : comparisons(comparisons) {
-      double oldTotal = 0.0;
-      double oldCount = 0.0;
-      double newTotal = 0.0;
-      double newCount = comparisons.size();
-      Column fnCol("Filename");
-      Column prevCol("Previous Coverage", Column::Alignment::Center);
-      Column currCol("Current Coverage", Column::Alignment::Center);
-      Column diffCol("Coverage Difference", Column::Alignment::Center);
-      for (auto &cmp : comparisons) {
-        dbgs() << "Creating column for: " << cmp->newItem->name << "\n";
-        if (auto old = cmp->oldItem) {
-          oldTotal += old->coveragePercentage();
-          oldCount += 1.0;
-        }
-        newTotal += cmp->newItem->coveragePercentage();
-        std::string oldPercentage = cmp->oldItem ?
-          formattedDouble(cmp->oldItem->coveragePercentage()) : "N/A";
-        std::string newPercentage =
-          formattedDouble(cmp->newItem->coveragePercentage());
-        newTotal += cmp->newItem->coveragePercentage();
-        fnCol.add(md::code(cmp->newItem->name));
-        prevCol.add(oldPercentage);
-        currCol.add(newPercentage);
-        diffCol.add(cmp->formattedCoverageDifference());
-      }
-      if (oldCount > 0.0) {
-        oldTotal /= oldCount;
-      }
-      newTotal /= newCount;
-      fnCol.elements.insert(fnCol.elements.begin(), "Total");
-      prevCol.elements.insert(prevCol.elements.begin(), formattedDouble(oldTotal));
-      currCol.elements.insert(currCol.elements.begin(), formattedDouble(oldTotal));
-      diffCol.elements.insert(diffCol.elements.begin(), formattedDouble(newTotal - oldTotal));
-      this->columns = { fnCol, prevCol, currCol, diffCol };
-    }
+    MarkdownWriter(std::vector<std::shared_ptr<FileComparison>> comparisons);
   };
 }
 

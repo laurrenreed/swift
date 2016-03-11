@@ -67,15 +67,26 @@ namespace covcompare {
     return _functionMap;
   }
 
-  map<string, shared_ptr<File>> CoverageFilePair::fileMap() {
+  map<string, shared_ptr<File>>
+  CoverageFilePair::fileMap(std::string coveredDir) {
     auto mapping = coverageMapping();
     map<string, shared_ptr<File>> files;
     for (auto &filename : mapping->getUniqueSourceFiles()) {
+      std::string truncatedFilename = filename;
+      if (coveredDir != "") {
+        if (!filename.startswith(coveredDir)) {
+          continue;
+        }
+        std::string parentPath = sys::path::parent_path(coveredDir);
+        truncatedFilename = filename.substr(parentPath.size(),
+                                            filename.size() -
+                                            parentPath.size());
+      }
       vector<Function> functions;
       for (auto &func : mapping->getCoveredFunctions(filename)) {
         functions.push_back(func);
       }
-      files[filename] = make_shared<File>(filename, functions);
+      files[filename] = make_shared<File>(truncatedFilename, functions);
     }
     return files;
   }
@@ -109,21 +120,13 @@ namespace covcompare {
     auto oldFiles = fileMapFromYAML(oldFile);
     auto newFiles = fileMapFromYAML(newFile);
     for (auto &iter : newFiles) {
-      if (options.coveredDir != "" &&
-          !StringRef(iter.first).startswith(options.coveredDir)) {
-        continue;
-      }
-      std::string parentPath = sys::path::parent_path(options.coveredDir);
-      std::string filename = iter.first.substr(parentPath.size(),
-                                               iter.first.size() -
-                                               parentPath.size());
       shared_ptr<File> oldFile;
       auto old = oldFiles.find(iter.first);
       if (old != oldFiles.end()) {
-        oldFile = make_shared<File>(filename, old->second.functions);
+        oldFile = make_shared<File>(old->second);
       }
       auto c = make_shared<FileComparison>(oldFile,
-                make_shared<File>(filename, iter.second.functions));
+                make_shared<File>(iter.second));
       comparisons.push_back(c);
     }
 
@@ -158,9 +161,6 @@ namespace covcompare {
                                  cl::desc("<old yaml file>"), cl::Required);
     cl::opt<std::string> newFile(cl::Positional,
                                  cl::desc("<new yaml file>"), cl::Required);
-    cl::opt<std::string> coveredDir("covered-dir", cl::Optional,
-                                       cl::desc("Restrict output to a certain "
-                                                "covered subdirectory"));
     cl::opt<Options::Format> format("f",
                                     cl::desc("Format to output comparison"),
                                     cl::values(clEnumValN(Options::HTML,
@@ -173,8 +173,7 @@ namespace covcompare {
                                     cl::init(Options::Markdown));
     cl::ParseCommandLineOptions(argc, argv);
     
-    Options options(coveredDir,
-                    format.getValue(),
+    Options options(format.getValue(),
                     output);
     
     ProfdataCompare comparer(oldFile, newFile, options);
@@ -195,10 +194,13 @@ namespace covcompare {
                               cl::desc("<profdata file>"), cl::Required);
     cl::opt<std::string> binary(cl::Positional,
                                 cl::desc("<binary file>"), cl::Required);
+    cl::opt<std::string> coveredDir("covered-dir", cl::Optional,
+                                    cl::desc("Restrict output to a certain "
+                                             "covered subdirectory"));
     cl::ParseCommandLineOptions(argc, argv);
     
     CoverageFilePair filePair(file, binary);
-    auto map = filePair.fileMap();
+    auto map = filePair.fileMap(coveredDir);
     vector<File> files;
     for (auto &pair : map) {
       files.push_back(*pair.second);
