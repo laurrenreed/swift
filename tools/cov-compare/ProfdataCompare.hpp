@@ -23,6 +23,7 @@
 #include "llvm/Support/Path.h"
 #include "Utils.hpp"
 #include <map>
+#include <set>
 
 using namespace llvm;
 using namespace coverage;
@@ -39,7 +40,7 @@ namespace covcompare {
     } Format;
     
     /// The files that this program should consider when comparing coverage.
-    std::vector<std::string> coveredFiles;
+    std::string coveredDir;
     
     /// The output format.
     Format output;
@@ -47,10 +48,10 @@ namespace covcompare {
     /// The filename (or directory, if the output format is HTML) to output.
     std::string outputFilename;
     
-    Options(std::vector<std::string> coveredFiles, Format output,
+    Options(std::string coveredDir, Format output,
             std::string outputFilename)
-    : coveredFiles(coveredFiles), output(output),
-    outputFilename(outputFilename) {}
+    : coveredDir(coveredDir), output(output),
+      outputFilename(outputFilename) {}
   };
   
   struct Region {
@@ -121,7 +122,7 @@ namespace covcompare {
     
     File(std::string name,
          std::vector<Function> functions)
-    : name(sys::path::filename(name)), functions(functions) {
+    : name(name), functions(functions) {
     }
     
     File(File &copy)

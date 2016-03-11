@@ -14,6 +14,9 @@
 #include "llvm/Support/Path.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/Support/FileSystem.h"
+#include "llvm/Support/Process.h"
+#include "llvm/Support/FormattedStream.h"
+#include "swift/Basic/Demangle.h"
 #include <cxxabi.h>
 #include <unistd.h>
 
@@ -21,6 +24,21 @@ using namespace std;
 using namespace llvm;
 
 namespace covcompare {
+  void withColor(raw_ostream::Colors, bool bold, bool bg, function<void ()> f) {
+    bool colored = sys::Process::StandardErrHasColors();
+    if (colored)
+      ferrs().changeColor(raw_ostream::MAGENTA, bold, bg);
+    f();
+    if (colored)
+      ferrs().resetColor();
+  }
+  void warn(std::string Text) {
+    withColor(raw_ostream::MAGENTA, /*bold=*/true, /*bg=*/false, [] {
+      ferrs() << "warning: ";
+    });
+    ferrs() << Text << "\n";
+  }
+  
   string extractSymbol(string name) {
     auto pair = StringRef(name).split(':');
     if (pair.second == "") {
@@ -31,19 +49,27 @@ namespace covcompare {
   }
   
   string demangled(string symbol) {
-    int status;
-    auto demangled = abi::__cxa_demangle(symbol.c_str(), 0, 0, &status);
-    if (demangled) {
-      string s(demangled);
-      free(demangled);
-      return s;
+    auto prefix = symbol.substr(0, 2);
+    if (prefix == "_Z") {
+      int status;
+      auto demangled = abi::__cxa_demangle(symbol.c_str(), 0, 0, &status);
+      if (demangled) {
+        string s(demangled);
+        free(demangled);
+        return s;
+      }
+    } else if (prefix == "_T") {
+      return swift::Demangle::demangleSymbolAsString(symbol);
     }
-    errs() << "warning: Could not demangle " << symbol << ".\n";
+    warn("Could not demangle " + symbol);
     return symbol;
   }
   
   void exitWithErrorCode(error_code error) {
-    errs() << "error: " << error.message() << "\n";
+    withColor(raw_ostream::RED, /* bold = */true, /* bg = */false, []{
+      ferrs() << "error: ";
+    });
+    ferrs() << error.message() << "\n";
     exit(error.value());
   }
   
