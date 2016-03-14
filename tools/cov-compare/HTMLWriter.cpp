@@ -120,8 +120,9 @@ namespace covcompare {
   }
   
   void HTMLWriter::write(ProfdataCompare &comparer) {
-    sys::fs::create_directories(dirname);
-    writeCSS();
+    if (auto err = sys::fs::create_directories(dirname)) {
+      exitWithErrorCode(err);
+    }
     writeSummary(comparer);
     for (auto &comparison : comparer.comparisons) {
       writeComparisonReport(*comparison);
@@ -130,6 +131,10 @@ namespace covcompare {
   
   void HTMLWriter::writeComparisonReport(FileComparison &comparison) {
     auto newName = dirname + "/" + comparison.newItem->name + ".html";
+    auto base = sys::path::parent_path(newName);
+    if (auto err = sys::fs::create_directories(base)) {
+      exitWithErrorCode(err);
+    }
     error_code error;
     raw_fd_ostream os(newName,
                       error, sys::fs::F_RW);
@@ -151,7 +156,7 @@ namespace covcompare {
           diffString = funcComparison.formattedCoverageDifference();
           
           CoverageStatus status =
-            statusForDiff(funcComparison.coverageDifference());
+          statusForDiff(funcComparison.coverageDifference());
           _class = coverageStatusString(status);
         }
         string symbol = funcComparison.functionName();
@@ -181,67 +186,69 @@ namespace covcompare {
       for (auto &cmp : comparer.comparisons) {
         
         string oldPercentage = cmp->oldItem ?
-          formattedDouble(cmp->oldItem->coveragePercentage()) : "N/A";
+        formattedDouble(cmp->oldItem->coveragePercentage()) : "N/A";
         
         string newPercentage =
-          formattedDouble(cmp->newItem->coveragePercentage());
-        
-        auto fn = html::escape(cmp->newItem->name);
+        formattedDouble(cmp->newItem->coveragePercentage());
+        auto path = sys::path::relative_path(cmp->newItem->name);
+        auto fn = html::escape(path);
         CoverageStatus status = statusForDiff(cmp->coverageDifference());
         string _class = coverageStatusString(status);
         fnCol.add(html::a(fn + ".html", fn));
         prevCol.add(oldPercentage);
         currCol.add(newPercentage);
         diffCol.add(html::span(_class,
-                        html::escape(cmp->formattedCoverageDifference())));
+                               html::escape(cmp->formattedCoverageDifference())));
       }
       this->writeTable({ fnCol, prevCol, currCol, diffCol }, os);
     });
   }
   
-  void HTMLWriter::writeCSS() {
+  void HTMLWriter::writeCSS(raw_ostream &os) {
     string css = "body {"
-                 "  font-family: -apple-system, sans-serif;"
-                 "}"
-                 "footer {"
-                 "  padding: 15px;"
-                 "}"
-                 "a {"
-                 "  text-decoration: none;"
-                 "}"
-                 "table, th, td {"
-                 "  padding: 10px;"
-                 "  text-align: left;"
-                 "  border: 1px solid #ddd;"
-                 "  border-collapse: collapse;"
-                 "}"
-                 ".warning {"
-                 "  color: #f9a03f;"
-                 "  font-weight: normal;"
-                 "}"
-                 ".bad {"
-                 "  color: #ba1b1d;"
-                 "  font-weight: bold;"
-                 "}"
-                 ".good {"
-                 "  color: #1cc000;"
-                 "  font-weight: normal;"
-                 "}";
-    error_code error;
-    raw_fd_ostream out(dirname + "/style.css", error, sys::fs::F_RW);
-    if (error) exitWithErrorCode(error);
-    out << css;
+    "  font-family: -apple-system, sans-serif;"
+    "}"
+    "footer {"
+    "  padding: 15px;"
+    "}"
+    "a {"
+    "  text-decoration: none;"
+    "}"
+    "table, th, td {"
+    "  padding: 10px;"
+    "  text-align: left;"
+    "  border: 1px solid #ddd;"
+    "  border-collapse: collapse;"
+    "}"
+    ".warning {"
+    "  color: #f9a03f;"
+    "  font-weight: normal;"
+    "}"
+    ".bad {"
+    "  color: #ba1b1d;"
+    "  font-weight: bold;"
+    "}"
+    ".good {"
+    "  color: #1cc000;"
+    "  font-weight: normal;"
+    "}";
+    os << css;
   }
   
   void HTMLWriter::wrapHTMLOutput(raw_ostream &out,
                                   string title,
                                   HTMLOutputFunction innerGen) {
-    out << "<!DOCTYPE html><html><head>" <<
-           html::tag("title", title) <<
-           "<meta name='viewport'"
+    out << "<!DOCTYPE html>\n"
+           "<html>\n"
+           "  <head>\n" <<
+           "    " << html::tag("title", title) <<
+           "    <meta name='viewport'"
            "content='width=device-width, initial-scale=1'>";
-    out << "<link rel='stylesheet' href='style.css' type='text/css'>";
-    out << "</head><body>";
+    out << "    <style>";
+    writeCSS(out);
+    out << "    </style>";
+    out << "  </head>\n"
+           "  <body>";
     innerGen();
     
     auto end = chrono::system_clock::now();
@@ -249,6 +256,7 @@ namespace covcompare {
     auto date_str = ctime(&end_time);
     out << html::tag("footer",
                      "Generated by cov-compare on " + html::escape(date_str));
-    out << "</body></html>";
+    out << "  </body>\n"
+           "</html>";
   }
 }
