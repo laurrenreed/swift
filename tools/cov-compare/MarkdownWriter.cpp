@@ -30,7 +30,7 @@ namespace md {
     return "[" + desc + "](" + url + ")";
   }
 }
-  tuple<double, double>
+  pair<double, double>
   coveragePercentages(vector<shared_ptr<FileComparison>> &comparisons) {
     double oldRegionCount = 0;
     double newRegionCount = 0;
@@ -99,7 +99,7 @@ namespace md {
       }
     }
     if (regressed.size()) {
-      os << "⚠️ There are " << regressed.size() << " areas in this pull "
+      os << "There are " << regressed.size() << " areas in this pull "
       << "request that need attention:\n\n";
       for (auto &cmp : regressed) {
         os << "  - " << md::code(cmp->newItem->name)
@@ -109,7 +109,7 @@ namespace md {
       }
       os << "\n";
     } else {
-      os << "👍 There are no significant regressions in this pull request.\n";
+      os << "There are no significant regressions in this pull request.\n";
     }
     os << "You've made changes to the following files:\n\n";
   }
@@ -122,9 +122,9 @@ namespace md {
     Column fnCol("Filename");
     Column prevCol("Previous Coverage", Column::Alignment::Center);
     Column currCol("Current Coverage", Column::Alignment::Center);
+    Column regionCol("Regions Exec'd", Column::Alignment::Center);
     Column diffCol("Coverage Difference", Column::Alignment::Center);
     for (auto &cmp : comparisons) {
-      dbgs() << "Creating column for: " << cmp->newItem->name << "\n";
       std::string oldPercentage = cmp->oldItem ?
       formattedDouble(cmp->oldItem->coveragePercentage()) : "N/A";
       std::string newPercentage =
@@ -132,22 +132,31 @@ namespace md {
       fnCol.add(md::code(cmp->newItem->name));
       prevCol.add(oldPercentage);
       currCol.add(newPercentage);
+      int regions = 0;
+      int regionsExecuted = 0;
+      for (auto &func : cmp->newItem->functions) {
+        for (auto &region : func.regions) {
+          if (region.executionCount > 0) {
+            regionsExecuted++;
+          }
+          regions++;
+        }
+      }
+      regionCol.add(to_string(regionsExecuted) + "/" + to_string(regions));
       diffCol.add(cmp->formattedCoverageDifference());
     }
-    auto start = clock();
     auto coverages = coveragePercentages(comparisons);
-    auto end = clock();
-    outs() << "Took " << (double(end - start) / double(CLOCKS_PER_SEC))
-           << "s to compute coverage\n";
-    auto oldTotal = get<0>(coverages);
-    auto newTotal = get<1>(coverages);
+    auto oldTotal = coverages.first;
+    auto newTotal = coverages.second;
     fnCol.elements.insert(fnCol.elements.begin(), "Total");
     prevCol.elements.insert(prevCol.elements.begin(),
                             formattedDouble(oldTotal));
     currCol.elements.insert(currCol.elements.begin(),
                             formattedDouble(oldTotal));
+    regionCol.elements.insert(regionCol.elements.begin(),
+                              "N/A");
     diffCol.elements.insert(diffCol.elements.begin(),
                             formattedDouble(newTotal - oldTotal));
-    this->columns = { fnCol, prevCol, currCol, diffCol };
+    this->columns = { fnCol, prevCol, currCol, regionCol, diffCol };
   }
 }

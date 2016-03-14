@@ -53,13 +53,15 @@ namespace covcompare {
   public:
     unsigned columnStart, columnEnd, lineStart, lineEnd;
     uint64_t executionCount;
+    
     Region(unsigned columnStart, unsigned columnEnd,
            unsigned lineStart, unsigned lineEnd, uint64_t executionCount)
     : columnStart(columnStart), columnEnd(columnEnd), lineStart(lineStart),
       lineEnd(lineEnd), executionCount(executionCount) {}
     Region(llvm::coverage::CountedRegion &region)
     : Region(region.ColumnStart, region.ColumnEnd,
-             region.LineStart, region.LineEnd, region.ExecutionCount) {}
+             region.LineStart, region.LineEnd, region.ExecutionCount) {
+    }
     Region() {}
   };
   
@@ -84,7 +86,11 @@ namespace covcompare {
     Function(llvm::coverage::FunctionRecord record) {
       this->name = extractSymbol(record.Name);
       for (auto &region : record.CountedRegions) {
-        this->regions.push_back(region);
+        if (region.Kind == CounterMappingRegion::RegionKind::SkippedRegion)
+          continue;
+        Region r(region.ColumnStart, region.ColumnEnd,
+                 region.LineStart, region.LineEnd, region.ExecutionCount);
+        this->regions.push_back(r);
       }
       this->executionCount = record.ExecutionCount;
     }

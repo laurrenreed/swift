@@ -41,7 +41,7 @@ namespace covcompare {
         
         /// Writes a basic CSS file that has CSS classes
         /// for good, okay, and bad coverage.
-        void writeCSS();
+        void writeCSS(raw_ostream &os);
         
         /// Writes a detailed list of functions within a comparison,
         /// and their current coverage status.
