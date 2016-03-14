@@ -20,12 +20,18 @@ from multiprocessing import Process
 import sys
 import logging
 
-# hack to import SwiftBuildSupport
-support_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                           '..', 'swift_build_support')
+# hack to import SwiftBuildSupport and swift_build_support
+parent_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+sys.path.append(parent_dir)
+support_dir = os.path.join(parent_dir, 'swift_build_support')
 sys.path.append(support_dir)
 from swift_build_support.llvm import host_executable
+from SwiftBuildSupport import check_output
 
+LLVM_PROFDATA_PATH = host_executable('llvm-profdata')
+_profdata_help = check_output([LLVM_PROFDATA_PATH, 'merge', '-help'])
+LLVM_PROFDATA_SUPPORTS_SPARSE = \
+    'sparse' in _profdata_help
 
 class ProfdataMergerProcess(Process):
     def __init__(self, config, file_queue):
@@ -36,7 +42,6 @@ class ProfdataMergerProcess(Process):
         self.profdata_path = os.path.join(config.tmp_dir,
                                           "%s.profdata" % self.name)
         self.profdata_tmp_path = self.profdata_path + ".copy"
-        self.llvm_profdata_path = host_executable('llvm-profdata')
 
     def report(self, msg, level=logging.INFO):
         """Convenience method for reporting status from the workers."""
@@ -55,9 +60,10 @@ class ProfdataMergerProcess(Process):
             os.rename(self.profdata_path, self.profdata_tmp_path)
             self.filename_buffer.append(self.profdata_tmp_path)
         cleaned_files = ' '.join(pipes.quote(f) for f in self.filename_buffer)
-        llvm_cmd = ("%s merge -o %s %s"
-                    % (self.llvm_profdata_path,
-                        self.profdata_path, cleaned_files))
+        llvm_cmd = ("%s merge -o %s %s %s"
+                    % (LLVM_PROFDATA_PATH,
+                        self.profdata_path, cleaned_files,
+                      '-sparse' if LLVM_PROFDATA_SUPPORTS_SPARSE else ''))
         self.report(llvm_cmd)
         ret = subprocess.call(llvm_cmd, shell=True)
         if ret != 0:
