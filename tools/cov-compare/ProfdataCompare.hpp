@@ -79,6 +79,7 @@ namespace covcompare {
       }
       return ((double)counted / (double)regions.size()) * 100;
     }
+    std::pair<int, int> regionCounts();
     Function(std::string name, std::vector<Region> regions,
              uint64_t executionCount)
     : name(name), regions(regions), executionCount(executionCount) {}
@@ -115,6 +116,9 @@ namespace covcompare {
     
     /// \returns The percentage of functions with a non-zero execution count.
     double coveragePercentage();
+    
+    
+    std::pair<int, int> regionCounts();
     
     /// \returns A map of function symbols to the
     /// corresponding Functions.
@@ -253,6 +257,9 @@ namespace covcompare {
     
     void compare();
   };
+  
+  std::pair<double, double>
+  coveragePercentages(std::vector<std::shared_ptr<FileComparison>> &comparisons);
   
   int compareMain(int argc, const char *argv[]);
   int yamlMain(int argc, const char *argv[]);

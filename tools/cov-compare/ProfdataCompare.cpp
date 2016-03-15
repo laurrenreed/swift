@@ -22,6 +22,36 @@ using namespace coverage;
 
 namespace covcompare {
   
+  pair<double, double>
+  coveragePercentages(vector<shared_ptr<FileComparison>> &comparisons) {
+    double oldRegionCount = 0;
+    double newRegionCount = 0;
+    double oldRegionsExecuted = 0;
+    double newRegionsExecuted = 0;
+    for (auto &cmp : comparisons) {
+      if (auto old = cmp->oldItem) {
+        for (auto &func : old->functions) {
+          for (auto &region : func.regions) {
+            oldRegionCount++;
+            if (region.executionCount > 0) {
+              oldRegionsExecuted++;
+            }
+          }
+        }
+      }
+      for (auto &func : cmp->newItem->functions) {
+        for (auto &region : func.regions) {
+          newRegionCount++;
+          if (region.executionCount > 0) {
+            newRegionsExecuted++;
+          }
+        }
+      }
+    }
+    return { (newRegionsExecuted / newRegionCount) * 100.0,
+      (oldRegionsExecuted / oldRegionCount) * 100.0 };
+  }
+  
   double File::coveragePercentage() {
     if (functions.empty()) return 100.0;
     double totalPercentagePoints = 0;
@@ -29,6 +59,29 @@ namespace covcompare {
       totalPercentagePoints += func.coveragePercentage();
     }
     return (totalPercentagePoints / (double)functions.size());
+  }
+  
+  pair<int, int> Function::regionCounts() {
+    int regions = 0;
+    int regionsExecuted = 0;
+    for (auto &region : this->regions) {
+      if (region.executionCount > 0) {
+        regionsExecuted++;
+      }
+      regions++;
+    }
+    return { regionsExecuted, regions };
+  }
+  
+  pair<int, int> File::regionCounts() {
+    int regions = 0;
+    int regionsExecuted = 0;
+    for (auto &func : functions) {
+      auto pair = func.regionCounts();
+      regionsExecuted += pair.first;
+      regions += pair.second;
+    }
+    return { regionsExecuted, regions };
   }
   
   vector<FunctionComparison> FileComparison::functionComparisons() {
