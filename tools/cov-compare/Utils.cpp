@@ -73,11 +73,6 @@ namespace covcompare {
     exit(error.value());
   }
   
-  string formattedDouble(double n) {
-    char buf[12];
-    snprintf(buf, 12, "%.02f%%", n);
-    return buf;
-  }
   
   unique_ptr<raw_ostream> streamForFile(string file) {
     if (file.size()) {

@@ -17,6 +17,7 @@
 #include "ProfdataCompare.hpp"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/FormattedStream.h"
+#include "Writer.hpp"
 
 namespace covcompare {
   namespace md {
@@ -25,53 +26,19 @@ namespace covcompare {
     std::string code(std::string text);
     std::string link(std::string desc, std::string url);
   }
-  /// A struct that holds a 'column' of information, as represented in a table.
-  struct Column {
-    /// The alignment of the column,
-    /// respected if possible in the output medium.
-    typedef enum {
-      Left,
-      Center,
-      Right
-    } Alignment;
-    
-    /// The 'header' at the top of the column in a table.
-    std::string header;
-    
-    /// The individual elements per row of this column.
-    std::vector<std::string> elements;
-    
-    /// The alignment of the values in this column.
-    Alignment alignment;
-    
-    /// A shortcut to add a value to this column.
-    void add(std::string val) {
-      elements.push_back(val);
-    }
-    
-    Column(std::string header, Alignment alignment = Left,
-           std::vector<std::string> elements = {})
-    : header(header), elements(elements), alignment(alignment) {}
-  };
   
   /// A class that wraps multiple columns and outputs them as a Markdown table.
-  class MarkdownWriter {
+  class MarkdownWriter : public Writer {
   private:
-    void writeTable(raw_ostream &os);
-    void writeAnalysis(raw_ostream &os);
-    std::string bold(std::string text);
-    std::string code(std::string text);
+    void writeAnalysis(ProfdataCompare &c);
   public:
-    /// The comparisons this writer will analyze.
-    std::vector<std::shared_ptr<FileComparison>> comparisons;
-    
-    /// The columns this writer will write.
-    std::vector<Column> columns;
-    
     /// Writes this table to a stream.
-    void write(llvm::raw_ostream &os);
+    void write(ProfdataCompare &comparer);
+    virtual void writeTable(std::vector<Column> columns,
+                            llvm::raw_ostream &os);
+    virtual std::string formattedFilename(std::string filename);
     
-    MarkdownWriter(std::vector<std::shared_ptr<FileComparison>> comparisons);
+    MarkdownWriter() {}
   };
 }
 
