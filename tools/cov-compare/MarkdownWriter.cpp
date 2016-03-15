@@ -30,35 +30,6 @@ namespace md {
     return "[" + desc + "](" + url + ")";
   }
 }
-  pair<double, double>
-  coveragePercentages(vector<shared_ptr<FileComparison>> &comparisons) {
-    double oldRegionCount = 0;
-    double newRegionCount = 0;
-    double oldRegionsExecuted = 0;
-    double newRegionsExecuted = 0;
-    for (auto &cmp : comparisons) {
-      if (auto old = cmp->oldItem) {
-        for (auto &func : old->functions) {
-          for (auto &region : func.regions) {
-            oldRegionCount++;
-            if (region.executionCount > 0) {
-              oldRegionsExecuted++;
-            }
-          }
-        }
-      }
-      for (auto &func : cmp->newItem->functions) {
-        for (auto &region : func.regions) {
-          newRegionCount++;
-          if (region.executionCount > 0) {
-            newRegionsExecuted++;
-          }
-        }
-      }
-    }
-    return { (newRegionsExecuted / newRegionCount) * 100.0,
-             (oldRegionsExecuted / oldRegionCount) * 100.0 };
-  }
 
   void MarkdownWriter::writeTable(raw_ostream &os) {
     os << "| ";
@@ -132,20 +103,11 @@ namespace md {
       fnCol.add(md::code(cmp->newItem->name));
       prevCol.add(oldPercentage);
       currCol.add(newPercentage);
-      int regions = 0;
-      int regionsExecuted = 0;
-      for (auto &func : cmp->newItem->functions) {
-        for (auto &region : func.regions) {
-          if (region.executionCount > 0) {
-            regionsExecuted++;
-          }
-          regions++;
-        }
-      }
-      regionCol.add(to_string(regionsExecuted) + "/" + to_string(regions));
+      auto pair = cmp->newItem->regionCounts();
+      regionCol.add(to_string(pair.first) + "/" + to_string(pair.second));
       diffCol.add(cmp->formattedCoverageDifference());
     }
-    auto coverages = coveragePercentages(comparisons);
+    auto coverages = covcompare::coveragePercentages(this->comparisons);
     auto oldTotal = coverages.first;
     auto newTotal = coverages.second;
     fnCol.elements.insert(fnCol.elements.begin(), "Total");

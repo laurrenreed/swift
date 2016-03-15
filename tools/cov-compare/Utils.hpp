@@ -15,6 +15,7 @@
 
 #include <stdio.h>
 #include <string>
+#include <vector>
 #include <system_error>
 #include "llvm/Support/raw_ostream.h"
 
@@ -33,6 +34,7 @@ namespace covcompare {
   
   /// Either reads the provided file or returns stdout if the file is empty.
   std::unique_ptr<llvm::raw_ostream> streamForFile(std::string file);
+  
 }
 
 #endif /* Utils_hpp */

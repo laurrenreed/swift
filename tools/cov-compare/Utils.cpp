@@ -17,23 +17,25 @@
 #include "llvm/Support/Process.h"
 #include "llvm/Support/FormattedStream.h"
 #include "swift/Basic/Demangle.h"
+#include "ProfdataCompare.hpp"
 #include <cxxabi.h>
-#include <unistd.h>
 
 using namespace std;
 using namespace llvm;
 
 namespace covcompare {
-  void withColor(raw_ostream::Colors, bool bold, bool bg, function<void ()> f) {
+  void withColor(raw_ostream::Colors color, bool bold,
+                 bool bg, function<void ()> f) {
     bool colored = sys::Process::StandardErrHasColors();
     if (colored)
-      ferrs().changeColor(raw_ostream::MAGENTA, bold, bg);
+      ferrs().changeColor(color, bold, bg);
     f();
     if (colored)
       ferrs().resetColor();
   }
+  
   void warn(std::string Text) {
-    withColor(raw_ostream::MAGENTA, /*bold=*/true, /*bg=*/false, [] {
+    withColor(raw_ostream::MAGENTA, /*bold=*/true, /*bg=*/false, []{
       ferrs() << "warning: ";
     });
     ferrs() << Text << "\n";
@@ -51,8 +53,7 @@ namespace covcompare {
   string demangled(string symbol) {
     auto prefix = symbol.substr(0, 2);
     if (prefix == "_Z") {
-      int status;
-      auto demangled = abi::__cxa_demangle(symbol.c_str(), 0, 0, &status);
+      auto demangled = abi::__cxa_demangle(symbol.c_str(), 0, 0, NULL);
       if (demangled) {
         string s(demangled);
         free(demangled);
@@ -61,7 +62,6 @@ namespace covcompare {
     } else if (prefix == "_T") {
       return swift::Demangle::demangleSymbolAsString(symbol);
     }
-    warn("Could not demangle " + symbol);
     return symbol;
   }
   
@@ -87,7 +87,7 @@ namespace covcompare {
       if (error) exitWithErrorCode(error);
       return move(os);
     } else {
-      return make_unique<raw_fd_ostream>(STDOUT_FILENO,
+      return make_unique<raw_fd_ostream>(fileno(stdout),
                                          /* shouldClose = */false);
     }
   }

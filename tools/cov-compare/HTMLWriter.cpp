@@ -182,6 +182,7 @@ namespace covcompare {
       Column fnCol("Filename");
       Column prevCol("Previous Coverage", Column::Alignment::Center);
       Column currCol("Current Coverage", Column::Alignment::Center);
+      Column regionCol("Regions Exec'd", Column::Alignment::Center);
       Column diffCol("Coverage Difference", Column::Alignment::Center);
       for (auto &cmp : comparer.comparisons) {
         
@@ -197,10 +198,25 @@ namespace covcompare {
         fnCol.add(html::a(fn + ".html", fn));
         prevCol.add(oldPercentage);
         currCol.add(newPercentage);
+        auto pair = cmp->newItem->regionCounts();
+        regionCol.add(to_string(pair.first) + "/" + to_string(pair.second));
         diffCol.add(html::span(_class,
                                html::escape(cmp->formattedCoverageDifference())));
       }
-      this->writeTable({ fnCol, prevCol, currCol, diffCol }, os);
+      
+      auto coverages = covcompare::coveragePercentages(comparer.comparisons);
+      auto oldTotal = coverages.first;
+      auto newTotal = coverages.second;
+      fnCol.elements.insert(fnCol.elements.begin(), "Total");
+      prevCol.elements.insert(prevCol.elements.begin(),
+                              formattedDouble(oldTotal));
+      currCol.elements.insert(currCol.elements.begin(),
+                              formattedDouble(oldTotal));
+      regionCol.elements.insert(regionCol.elements.begin(),
+                                "N/A");
+      diffCol.elements.insert(diffCol.elements.begin(),
+                              formattedDouble(newTotal - oldTotal));
+      this->writeTable({ fnCol, prevCol, currCol, regionCol, diffCol }, os);
     });
   }
   
