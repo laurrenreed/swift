@@ -17,82 +17,76 @@ using namespace std;
 
 namespace covcompare {
 namespace md {
-  std::string bold(std::string text) {
-    return "**" + text + "**";
+std::string bold(std::string text) { return "**" + text + "**"; }
+std::string italic(std::string text) { return "*" + text + "*"; }
+std::string code(std::string text) { return "`" + text + "`"; }
+std::string link(std::string desc, std::string url) {
+  return "[" + desc + "](" + url + ")";
+}
+}
+
+std::string MarkdownWriter::formattedFilename(std::string filename) {
+  return md::code(filename);
+}
+
+void MarkdownWriter::writeTable(vector<Column> columns, raw_ostream &os) {
+  os << "| ";
+  for (auto &column : columns) {
+    os << column.header << " | ";
   }
-  std::string italic(std::string text) {
-    return "*" + text + "*";
+  os << "\n|";
+  for (auto &column : columns) {
+    auto leftMark = "-";
+    auto rightMark = "-";
+    switch (column.alignment) {
+    case Column::Left:
+      leftMark = ":";
+      break;
+    case Column::Right:
+      rightMark = ":";
+      break;
+    case Column::Center:
+      leftMark = ":";
+      rightMark = ":";
+      break;
+    }
+    os << leftMark << std::string(column.header.size(), '-') << rightMark
+       << "|";
   }
-  std::string code(std::string text) {
-    return "`" + text + "`";
-  }
-  std::string link(std::string desc, std::string url) {
-    return "[" + desc + "](" + url + ")";
+  for (size_t i = 0; i < columns[0].elements.size(); i++) {
+    os << "\n| ";
+    for (auto &column : columns) {
+      os << column.elements[i] << " | ";
+    }
   }
 }
 
-  std::string MarkdownWriter::formattedFilename(std::string filename) {
-    return md::code(filename);
-  }
-  
-  void MarkdownWriter::writeTable(vector<Column> columns, raw_ostream &os) {
-    os << "| ";
-    for (auto &column : columns) {
-      os << column.header << " | ";
-    }
-    os << "\n|";
-    for (auto &column : columns) {
-      auto leftMark = "-";
-      auto rightMark = "-";
-      switch (column.alignment) {
-        case Column::Left:
-          leftMark = ":";
-          break;
-        case Column::Right:
-          rightMark = ":";
-          break;
-        case Column::Center:
-          leftMark = ":";
-          rightMark = ":";
-          break;
-      }
-      os << leftMark << std::string(column.header.size(), '-') << rightMark
-      << "|";
-    }
-    for (size_t i = 0; i < columns[0].elements.size(); i++) {
-      os << "\n| ";
-      for (auto &column : columns) {
-        os << column.elements[i] << " | ";
-      }
+void MarkdownWriter::writeAnalysis(ProfdataCompare &c) {
+  vector<shared_ptr<FileComparison>> regressed;
+  for (auto &cmp : c.comparisons) {
+    if (cmp->coverageDifference() < 0.0) {
+      regressed.emplace_back(cmp);
     }
   }
-  
-  void MarkdownWriter::writeAnalysis(ProfdataCompare &c) {
-    vector<shared_ptr<FileComparison>> regressed;
-    for (auto &cmp : c.comparisons) {
-      if (cmp->coverageDifference() < 0.0) {
-        regressed.emplace_back(cmp);
-      }
+  if (regressed.size()) {
+    *c.os << "There are " << regressed.size() << " areas in this pull "
+          << "request that need attention:\n\n";
+    for (auto &cmp : regressed) {
+      *c.os << "  - " << md::code(cmp->newItem->name)
+            << "'s coverage has regressed "
+            << md::bold(formattedDouble(abs(cmp->coverageDifference())))
+            << "\n";
     }
-    if (regressed.size()) {
-      *c.os << "There are " << regressed.size() << " areas in this pull "
-      << "request that need attention:\n\n";
-      for (auto &cmp : regressed) {
-        *c.os << "  - " << md::code(cmp->newItem->name)
-        << "'s coverage has regressed "
-        << md::bold(formattedDouble(abs(cmp->coverageDifference())))
-        << "\n";
-      }
-      *c.os << "\n";
-    } else {
-      *c.os << "There are no significant regressions in this pull request.\n";
-    }
-    *c.os << "You've made changes to the following files:\n\n";
+    *c.os << "\n";
+  } else {
+    *c.os << "There are no significant regressions in this pull request.\n";
   }
-  
-  void MarkdownWriter::write(ProfdataCompare &comparer) {
-    writeAnalysis(comparer);
-    auto table = tableForComparisons(comparer.comparisons);
-    writeTable(table, *comparer.os);
-  }
+  *c.os << "You've made changes to the following files:\n\n";
+}
+
+void MarkdownWriter::write(ProfdataCompare &comparer) {
+  writeAnalysis(comparer);
+  auto table = tableForComparisons(comparer.comparisons);
+  writeTable(table, *comparer.os);
+}
 }

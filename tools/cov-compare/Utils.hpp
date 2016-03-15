@@ -20,21 +20,20 @@
 #include "llvm/Support/raw_ostream.h"
 
 namespace covcompare {
-  std::string extractSymbol(std::string symbol);
-  
-  /// Attempts to demangle a C++ symbol, returning
-  /// the mangled symbol if it fails.
-  std::string demangled(std::string symbol);
-  
-  /// Prints an error message and exits.
-  void exitWithErrorCode(std::error_code error);
-  
-  /// Formats a double as xxx.xx%
-  std::string formattedDouble(double n);
-  
-  /// Either reads the provided file or returns stdout if the file is empty.
-  std::unique_ptr<llvm::raw_ostream> streamForFile(std::string file);
-  
+std::string extractSymbol(std::string symbol);
+
+/// Attempts to demangle a C++ symbol, returning
+/// the mangled symbol if it fails.
+std::string demangled(std::string symbol);
+
+/// Prints an error message and exits.
+void exitWithErrorCode(std::error_code error);
+
+/// Formats a double as xxx.xx%
+std::string formattedDouble(double n);
+
+/// Either reads the provided file or returns stdout if the file is empty.
+std::unique_ptr<llvm::raw_ostream> streamForFile(std::string file);
 }
 
 #endif /* Utils_hpp */

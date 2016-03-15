@@ -24,66 +24,63 @@ using namespace std;
 using namespace llvm;
 
 namespace covcompare {
-  void withColor(raw_ostream::Colors color, bool bold,
-                 bool bg, function<void ()> f) {
-    bool colored = sys::Process::StandardErrHasColors();
-    if (colored)
-      ferrs().changeColor(color, bold, bg);
-    f();
-    if (colored)
-      ferrs().resetColor();
+void withColor(raw_ostream::Colors color, bool bold, bool bg,
+               function<void()> f) {
+  bool colored = sys::Process::StandardErrHasColors();
+  if (colored)
+    ferrs().changeColor(color, bold, bg);
+  f();
+  if (colored)
+    ferrs().resetColor();
+}
+
+void warn(std::string Text) {
+  withColor(raw_ostream::MAGENTA, /*bold=*/true, /*bg=*/false,
+            [] { ferrs() << "warning: "; });
+  ferrs() << Text << "\n";
+}
+
+string extractSymbol(string name) {
+  auto pair = StringRef(name).split(':');
+  if (pair.second == "") {
+    return pair.first;
+  } else {
+    return pair.second;
   }
-  
-  void warn(std::string Text) {
-    withColor(raw_ostream::MAGENTA, /*bold=*/true, /*bg=*/false, []{
-      ferrs() << "warning: ";
-    });
-    ferrs() << Text << "\n";
-  }
-  
-  string extractSymbol(string name) {
-    auto pair = StringRef(name).split(':');
-    if (pair.second == "") {
-      return pair.first;
-    } else {
-      return pair.second;
+}
+
+string demangled(string symbol) {
+  auto prefix = symbol.substr(0, 2);
+  if (prefix == "_Z") {
+    auto demangled = abi::__cxa_demangle(symbol.c_str(), 0, 0, NULL);
+    if (demangled) {
+      string s(demangled);
+      free(demangled);
+      return s;
     }
+  } else if (prefix == "_T") {
+    return swift::Demangle::demangleSymbolAsString(symbol);
   }
-  
-  string demangled(string symbol) {
-    auto prefix = symbol.substr(0, 2);
-    if (prefix == "_Z") {
-      auto demangled = abi::__cxa_demangle(symbol.c_str(), 0, 0, NULL);
-      if (demangled) {
-        string s(demangled);
-        free(demangled);
-        return s;
-      }
-    } else if (prefix == "_T") {
-      return swift::Demangle::demangleSymbolAsString(symbol);
-    }
-    return symbol;
+  return symbol;
+}
+
+void exitWithErrorCode(error_code error) {
+  withColor(raw_ostream::RED, /* bold = */ true, /* bg = */ false,
+            [] { ferrs() << "error: "; });
+  ferrs() << error.message() << "\n";
+  exit(error.value());
+}
+
+unique_ptr<raw_ostream> streamForFile(string file) {
+  if (file.size()) {
+    error_code error;
+    auto os = make_unique<raw_fd_ostream>(file, error, sys::fs::F_RW);
+    if (error)
+      exitWithErrorCode(error);
+    return move(os);
+  } else {
+    return make_unique<raw_fd_ostream>(fileno(stdout),
+                                       /* shouldClose = */ false);
   }
-  
-  void exitWithErrorCode(error_code error) {
-    withColor(raw_ostream::RED, /* bold = */true, /* bg = */false, []{
-      ferrs() << "error: ";
-    });
-    ferrs() << error.message() << "\n";
-    exit(error.value());
-  }
-  
-  
-  unique_ptr<raw_ostream> streamForFile(string file) {
-    if (file.size()) {
-      error_code error;
-      auto os = make_unique<raw_fd_ostream>(file,
-                                            error, sys::fs::F_RW);
-      if (error) exitWithErrorCode(error);
-      return move(os);
-    } else {
-      return make_unique<raw_fd_ostream>(fileno(stdout),
-                                         /* shouldClose = */false);
-    }
-  }
+}
 }
