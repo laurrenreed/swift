@@ -21,11 +21,8 @@ using llvm::yaml::MappingTraits;
 using llvm::yaml::SequenceTraits;
 using llvm::yaml::ScalarEnumerationTraits;
 
-template<typename U>
-struct SequenceTraits<std::vector<U>> {
-  static size_t size(IO &io, std::vector<U> &seq) {
-    return seq.size();
-  }
+template <typename U> struct SequenceTraits<std::vector<U>> {
+  static size_t size(IO &io, std::vector<U> &seq) { return seq.size(); }
   static U &element(IO &, std::vector<U> &seq, size_t index) {
     if (seq.size() <= index) {
       seq.resize(index + 1);
@@ -34,8 +31,7 @@ struct SequenceTraits<std::vector<U>> {
   }
 };
 
-template <>
-struct MappingTraits<covcompare::Region> {
+template <> struct MappingTraits<covcompare::Region> {
   static void mapping(IO &io, covcompare::Region &region) {
     io.mapRequired("column-start", region.columnStart);
     io.mapRequired("column-end", region.columnEnd);
@@ -46,8 +42,7 @@ struct MappingTraits<covcompare::Region> {
   static const bool flow = true;
 };
 
-template <>
-struct MappingTraits<covcompare::Function> {
+template <> struct MappingTraits<covcompare::Function> {
   static void mapping(IO &io, covcompare::Function &function) {
     io.mapRequired("name", function.name);
     io.mapRequired("regions", function.regions);
@@ -56,8 +51,7 @@ struct MappingTraits<covcompare::Function> {
   static const bool flow = true;
 };
 
-template <>
-struct MappingTraits<covcompare::File> {
+template <> struct MappingTraits<covcompare::File> {
   static void mapping(IO &io, covcompare::File &file) {
     io.mapRequired("filename", file.name);
     io.mapRequired("functions", file.functions);

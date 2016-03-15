@@ -20,26 +20,26 @@
 #include "Writer.hpp"
 
 namespace covcompare {
-  namespace md {
-    std::string bold(std::string text);
-    std::string italic(std::string text);
-    std::string code(std::string text);
-    std::string link(std::string desc, std::string url);
-  }
-  
-  /// A class that wraps multiple columns and outputs them as a Markdown table.
-  class MarkdownWriter : public Writer {
-  private:
-    void writeAnalysis(ProfdataCompare &c);
-  public:
-    /// Writes this table to a stream.
-    void write(ProfdataCompare &comparer);
-    virtual void writeTable(std::vector<Column> columns,
-                            llvm::raw_ostream &os);
-    virtual std::string formattedFilename(std::string filename);
-    
-    MarkdownWriter() {}
-  };
+namespace md {
+std::string bold(std::string text);
+std::string italic(std::string text);
+std::string code(std::string text);
+std::string link(std::string desc, std::string url);
+}
+
+/// A class that wraps multiple columns and outputs them as a Markdown table.
+class MarkdownWriter : public Writer {
+private:
+  void writeAnalysis(ProfdataCompare &c);
+
+public:
+  /// Writes this table to a stream.
+  void write(ProfdataCompare &comparer);
+  virtual void writeTable(std::vector<Column> columns, llvm::raw_ostream &os);
+  virtual std::string formattedFilename(std::string filename);
+
+  MarkdownWriter() {}
+};
 }
 
 #endif /* MarkdownWriter_hpp */
