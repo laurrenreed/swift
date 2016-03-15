@@ -45,9 +45,6 @@ struct Column {
 
 class Writer {
 protected:
-  /// Writes a full directory corresponding to the
-  /// provided ProfdataCompare object.
-  virtual void write(ProfdataCompare &comparer) = 0;
   virtual void writeTable(std::vector<Column> columns,
                           llvm::raw_ostream &os) = 0;
   std::string formattedDouble(double n);
@@ -55,6 +52,11 @@ protected:
   virtual std::string formattedFilename(std::string filename) = 0;
   std::vector<Column> tableForComparisons(
       std::vector<std::shared_ptr<FileComparison>> &comparisons);
+
+public:
+  /// Writes a full directory corresponding to the
+  /// provided ProfdataCompare object.
+  virtual void write(ProfdataCompare &comparer) = 0;
   Writer() {}
 };
 }

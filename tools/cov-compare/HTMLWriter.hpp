@@ -65,10 +65,7 @@ public:
   /// Writes a full directory corresponding to the
   /// provided ProfdataCompare object.
   void write(ProfdataCompare &comparer);
-
   HTMLWriter(std::string dirname) : dirname(dirname) {}
-
-private:
 };
 }
 
