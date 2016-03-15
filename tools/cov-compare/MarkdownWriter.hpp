@@ -31,13 +31,12 @@ std::string link(std::string desc, std::string url);
 class MarkdownWriter : public Writer {
 private:
   void writeAnalysis(ProfdataCompare &c);
+  virtual void writeTable(std::vector<Column> columns, llvm::raw_ostream &os);
+  virtual std::string formattedFilename(std::string filename);
 
 public:
   /// Writes this table to a stream.
   void write(ProfdataCompare &comparer);
-  virtual void writeTable(std::vector<Column> columns, llvm::raw_ostream &os);
-  virtual std::string formattedFilename(std::string filename);
-
   MarkdownWriter() {}
 };
 }
