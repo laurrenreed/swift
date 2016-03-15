@@ -17,57 +17,59 @@
 #include "ProfdataCompare.hpp"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/FormattedStream.h"
+#include "Writer.hpp"
 
 namespace covcompare {
-    struct Column;
+  /// A typedef for a function that purely executes side effects.
+  typedef std::function<void ()> HTMLOutputFunction;
+  
+  /// A struct that writes a directory of HTML files
+  /// representing a ProfdataCompare object.
+  ///
+  /// The directory structure looks like:
+  ///
+  ///   - main directory:
+  ///     - index.html [a summary of each file and the coverage diff]
+  ///     - file1.cpp.html
+  ///     - file2.cpp.html
+  ///     - ...
+  ///     - fileN.cpp.html
+  struct HTMLWriter : public Writer {
+    /// The path to the output directory.
+    std::string dirname;
     
-    /// A typedef for a function that purely executes side effects.
-    typedef std::function<void ()> HTMLOutputFunction;
+    /// Writes a basic CSS file that has CSS classes
+    /// for good, okay, and bad coverage.
+    void writeCSS(raw_ostream &os);
     
-    /// A struct that writes a directory of HTML files
-    /// representing a ProfdataCompare object.
-    ///
-    /// The directory structure looks like:
-    ///
-    ///   - main directory:
-    ///     - index.html [a summary of each file and the coverage diff]
-    ///     - file1.cpp.html
-    ///     - file2.cpp.html
-    ///     - ...
-    ///     - fileN.cpp.html
-    struct HTMLWriter {
-        /// The path to the output directory.
-        std::string dirname;
-        
-        /// Writes a basic CSS file that has CSS classes
-        /// for good, okay, and bad coverage.
-        void writeCSS(raw_ostream &os);
-        
-        /// Writes a detailed list of functions within a comparison,
-        /// and their current coverage status.
-        void writeComparisonReport(FileComparison &comparison);
-        
-        /// Writes a list of \a Columns as an HTML table.
-        void writeTable(std::vector<Column> columns, llvm::raw_ostream &os);
-        
-        /// Writes a summary of each file with a link to the in-depth file page,
-        /// and a simple diff of the coverage.
-        void writeSummary(ProfdataCompare &comparer);
-        
-        /// Writes the skeleton of an HTML file, and calls the callback that
-        /// is intended to output the body of the HTML.
-        void wrapHTMLOutput(llvm::raw_ostream &os,
-                            std::string title,
-                            HTMLOutputFunction innerGen);
-    public:
-        /// Writes a full directory corresponding to the
-        /// provided ProfdataCompare object.
-        void write(ProfdataCompare &comparer);
-        
-        HTMLWriter(std::string dirname)
-        : dirname(dirname) {}
-    private:
-    };
+    /// Writes a detailed list of functions within a comparison,
+    /// and their current coverage status.
+    void writeComparisonReport(FileComparison &comparison);
+    
+    /// Writes a list of \a Columns as an HTML table.
+    virtual void writeTable(std::vector<Column> columns, llvm::raw_ostream &os);
+    
+    /// Writes a summary of each file with a link to the in-depth file page,
+    /// and a simple diff of the coverage.
+    void writeSummary(ProfdataCompare &comparer);
+    
+    /// Writes the skeleton of an HTML file, and calls the callback that
+    /// is intended to output the body of the HTML.
+    void wrapHTMLOutput(llvm::raw_ostream &os,
+                        std::string title,
+                        HTMLOutputFunction innerGen);
+    
+    virtual std::string formattedDiff(double n);
+    virtual std::string formattedFilename(std::string filename);
+  public:
+    /// Writes a full directory corresponding to the
+    /// provided ProfdataCompare object.
+    void write(ProfdataCompare &comparer);
+    
+    HTMLWriter(std::string dirname)
+    : dirname(dirname) {}
+  private:
+  };
 }
 
 #endif /* HTMLWriter_hpp */

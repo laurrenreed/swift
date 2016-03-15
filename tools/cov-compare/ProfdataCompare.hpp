@@ -85,15 +85,15 @@ namespace covcompare {
     : name(name), regions(regions), executionCount(executionCount) {}
     
     Function(llvm::coverage::FunctionRecord record) {
-      this->name = extractSymbol(record.Name);
+      name = extractSymbol(record.Name);
       for (auto &region : record.CountedRegions) {
         if (region.Kind == CounterMappingRegion::RegionKind::SkippedRegion)
           continue;
         Region r(region.ColumnStart, region.ColumnEnd,
                  region.LineStart, region.LineEnd, region.ExecutionCount);
-        this->regions.push_back(r);
+        regions.emplace_back(r);
       }
-      this->executionCount = record.ExecutionCount;
+      executionCount = record.ExecutionCount;
     }
     
     Function(const Function &copy): name(copy.name), regions(copy.regions),
@@ -155,13 +155,6 @@ namespace covcompare {
       : 0.0;
       double diff = newItem->coveragePercentage() - oldPercentage;
       return fabs(diff) < 0.01 ? 0 : diff;
-    }
-    
-    /// \returns A percent-formatted string representing the coverage difference
-    /// between the two items in this comparison.
-    std::string formattedCoverageDifference() {
-      double diff = coverageDifference();
-      return (diff > 0 ? "+" : "") + formattedDouble(diff);
     }
     
     Comparison(std::shared_ptr<Compared> oldItem,

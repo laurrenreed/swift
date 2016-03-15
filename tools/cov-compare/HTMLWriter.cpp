@@ -102,17 +102,29 @@ namespace covcompare {
     }
   }
   
+  string HTMLWriter::formattedDiff(double n) {
+    auto status = statusForDiff(n);
+    auto spanClass = coverageStatusString(status);
+    return html::span(spanClass, Writer::formattedDiff(n));
+  }
+  
+  string HTMLWriter::formattedFilename(std::string filename) {
+    auto path = sys::path::relative_path(filename);
+    auto fn = html::escape(path);
+    return html::a(fn + ".html", fn);
+  }
+  
   void HTMLWriter::writeTable(vector<Column> columns, llvm::raw_ostream &os) {
     os << "<table>";
     vector<string> headers;
     for (auto &column : columns) {
-      headers.push_back(column.header);
+      headers.emplace_back(column.header);
     }
     os << html::headerRow(headers);
     for (size_t i = 0; i < columns[0].elements.size(); i++) {
       vector<string> elements;
       for (auto &column : columns) {
-        elements.push_back(column.elements[i]);
+        elements.emplace_back(column.elements[i]);
       }
       os << html::tr(elements);
     }
@@ -143,29 +155,32 @@ namespace covcompare {
       Column functionCol("Function");
       Column oldCovCol("Previous Coverage", Column::Alignment::Center);
       Column newCovCol("Current Coverage", Column::Alignment::Center);
+      Column regionCol("Regions Exec'd", Column::Alignment::Center);
       Column diffCol("Coverage Difference", Column::Alignment::Center);
       for (auto &funcComparison : comparison.functionComparisons()) {
         double newCoverage = funcComparison.newItem->coveragePercentage();
         string newCovString = formattedDouble(newCoverage);
         string oldCovString = "N/A";
         string diffString = "N/A";
-        string _class = "";
         if (auto func = funcComparison.oldItem) {
           double oldCoverage = func->coveragePercentage();
           oldCovString = formattedDouble(oldCoverage);
-          diffString = funcComparison.formattedCoverageDifference();
-          
-          CoverageStatus status =
-          statusForDiff(funcComparison.coverageDifference());
-          _class = coverageStatusString(status);
+          diffString = formattedDiff(newCoverage - oldCoverage);
         }
+        auto regionCounts = funcComparison.newItem->regionCounts();
+        regionCol.add(to_string(regionCounts.first) + "/" +
+                      to_string(regionCounts.second));
         string symbol = funcComparison.functionName();
         functionCol.add(html::escape(symbol));
         oldCovCol.add(oldCovString);
         newCovCol.add(newCovString);
-        diffCol.add(html::span(_class, diffString));
+        diffCol.add(diffString);
       }
-      this->writeTable({ functionCol, oldCovCol, newCovCol, diffCol }, os);
+      this->writeTable({
+        functionCol,
+        oldCovCol, newCovCol,
+        regionCol, diffCol
+      }, os);
     });
   }
   
@@ -179,44 +194,7 @@ namespace covcompare {
     auto title = oldFn + " vs. " + newFn;
     
     wrapHTMLOutput(os, title, [this, &comparer, &os] {
-      Column fnCol("Filename");
-      Column prevCol("Previous Coverage", Column::Alignment::Center);
-      Column currCol("Current Coverage", Column::Alignment::Center);
-      Column regionCol("Regions Exec'd", Column::Alignment::Center);
-      Column diffCol("Coverage Difference", Column::Alignment::Center);
-      for (auto &cmp : comparer.comparisons) {
-        
-        string oldPercentage = cmp->oldItem ?
-        formattedDouble(cmp->oldItem->coveragePercentage()) : "N/A";
-        
-        string newPercentage =
-        formattedDouble(cmp->newItem->coveragePercentage());
-        auto path = sys::path::relative_path(cmp->newItem->name);
-        auto fn = html::escape(path);
-        CoverageStatus status = statusForDiff(cmp->coverageDifference());
-        string _class = coverageStatusString(status);
-        fnCol.add(html::a(fn + ".html", fn));
-        prevCol.add(oldPercentage);
-        currCol.add(newPercentage);
-        auto pair = cmp->newItem->regionCounts();
-        regionCol.add(to_string(pair.first) + "/" + to_string(pair.second));
-        diffCol.add(html::span(_class,
-                               html::escape(cmp->formattedCoverageDifference())));
-      }
-      
-      auto coverages = covcompare::coveragePercentages(comparer.comparisons);
-      auto oldTotal = coverages.first;
-      auto newTotal = coverages.second;
-      fnCol.elements.insert(fnCol.elements.begin(), "Total");
-      prevCol.elements.insert(prevCol.elements.begin(),
-                              formattedDouble(oldTotal));
-      currCol.elements.insert(currCol.elements.begin(),
-                              formattedDouble(oldTotal));
-      regionCol.elements.insert(regionCol.elements.begin(),
-                                "N/A");
-      diffCol.elements.insert(diffCol.elements.begin(),
-                              formattedDouble(newTotal - oldTotal));
-      this->writeTable({ fnCol, prevCol, currCol, regionCol, diffCol }, os);
+      this->writeTable(tableForComparisons(comparer.comparisons), os);
     });
   }
   

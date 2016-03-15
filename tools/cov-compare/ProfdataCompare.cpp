@@ -21,35 +21,24 @@ using namespace llvm;
 using namespace coverage;
 
 namespace covcompare {
+  template <typename T,typename U>
+  inline std::pair<T,U> operator+(const std::pair<T,U> &l,
+                                  const std::pair<T,U> &r) {
+    return {l.first+r.first,l.second+r.second};
+  }
   
   pair<double, double>
   coveragePercentages(vector<shared_ptr<FileComparison>> &comparisons) {
-    double oldRegionCount = 0;
-    double newRegionCount = 0;
-    double oldRegionsExecuted = 0;
-    double newRegionsExecuted = 0;
+    pair<int, int> oldCounts = {0, 0};
+    pair<int, int> newCounts = {0, 0};
     for (auto &cmp : comparisons) {
       if (auto old = cmp->oldItem) {
-        for (auto &func : old->functions) {
-          for (auto &region : func.regions) {
-            oldRegionCount++;
-            if (region.executionCount > 0) {
-              oldRegionsExecuted++;
-            }
-          }
-        }
+        oldCounts = oldCounts + old->regionCounts();
       }
-      for (auto &func : cmp->newItem->functions) {
-        for (auto &region : func.regions) {
-          newRegionCount++;
-          if (region.executionCount > 0) {
-            newRegionsExecuted++;
-          }
-        }
-      }
+      newCounts = newCounts + cmp->newItem->regionCounts();
     }
-    return { (newRegionsExecuted / newRegionCount) * 100.0,
-      (oldRegionsExecuted / oldRegionCount) * 100.0 };
+    return { (double(newCounts.first) / double(newCounts.second)) * 100.0,
+      (double(oldCounts.first) / double(oldCounts.second)) * 100.0 };
   }
   
   double File::coveragePercentage() {
@@ -96,7 +85,7 @@ namespace covcompare {
       }
       auto func = FunctionComparison(oldFunction,
                make_shared<Function>(function));
-      funcComparisons.push_back(func);
+      funcComparisons.emplace_back(func);
     }
     return funcComparisons;
   }
@@ -137,7 +126,7 @@ namespace covcompare {
       }
       vector<Function> functions;
       for (auto &func : mapping->getCoveredFunctions(filename)) {
-        functions.push_back(func);
+        functions.emplace_back(func);
       }
       files[filename] = make_shared<File>(truncatedFilename, functions);
     }
@@ -180,7 +169,7 @@ namespace covcompare {
       }
       auto c = make_shared<FileComparison>(oldFile,
                 make_shared<File>(iter.second));
-      comparisons.push_back(c);
+      comparisons.emplace_back(c);
     }
 
     sort(comparisons.begin(), comparisons.end(),
@@ -198,7 +187,7 @@ namespace covcompare {
         HTMLWriter(options.outputFilename).write(*this);
         break;
       case Options::Markdown:
-        MarkdownWriter(comparisons).write(*os);
+        MarkdownWriter().write(*this);
         break;
     }
   }
@@ -214,20 +203,20 @@ namespace covcompare {
                                  cl::desc("<old yaml file>"), cl::Required);
     cl::opt<std::string> newFile(cl::Positional,
                                  cl::desc("<new yaml file>"), cl::Required);
-    cl::opt<Options::Format> format("f",
-                                    cl::desc("Format to output comparison"),
-                                    cl::values(clEnumValN(Options::HTML,
-                                                          "html",
-                                                          "HTML output"),
-                                               clEnumValN(Options::Markdown,
-                                                          "markdown",
-                                                          "Markdown table output"),
-                                               clEnumValEnd),
-                                    cl::init(Options::Markdown));
+    cl::opt<Options::Format>
+    format("f",
+           cl::desc("Format to output comparison"),
+           cl::values(clEnumValN(Options::HTML,
+                                 "html",
+                                 "HTML output"),
+                      clEnumValN(Options::Markdown,
+                                 "markdown",
+                                 "Markdown table output"),
+                      clEnumValEnd),
+           cl::init(Options::Markdown));
     cl::ParseCommandLineOptions(argc, argv);
     
-    Options options(format.getValue(),
-                    output);
+    Options options(format.getValue(), output);
     
     ProfdataCompare comparer(oldFile, newFile, options);
     
@@ -256,7 +245,7 @@ namespace covcompare {
     auto map = filePair.fileMap(coveredDir);
     vector<File> files;
     for (auto &pair : map) {
-      files.push_back(*pair.second);
+      files.emplace_back(*pair.second);
     }
     
     unique_ptr<raw_ostream> os = streamForFile(output);
