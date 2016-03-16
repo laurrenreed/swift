@@ -16,9 +16,8 @@
 
 using namespace llvm;
 using namespace covcompare;
-using namespace std;
 
-typedef function<int(int, const char **)> MainFunction;
+typedef std::function<int(int, const char **)> MainFunction;
 
 /// \brief Top level help.
 static int helpMain(int argc, const char *argv[]) {
@@ -39,7 +38,7 @@ int main(int argc, const char **argv) {
                       .Case("yaml", yamlMain)
                       .Default(helpMain);
 
-  string invocation = string(argv[0]) + " " + argv[1];
+  std::string invocation = std::string(argv[0]) + " " + argv[1];
   argv[1] = invocation.c_str();
   return function(argc - 1, argv + 1);
 }

@@ -16,7 +16,6 @@
 #include "MarkdownWriter.hpp"
 #include "YAMLWriter.hpp"
 
-using namespace std;
 using namespace llvm;
 using namespace coverage;
 
@@ -26,19 +25,28 @@ inline std::pair<T, U> operator+(const std::pair<T, U> &l,
                                  const std::pair<T, U> &r) {
   return {l.first + r.first, l.second + r.second};
 }
+  
+inline double percent(double x, double y) {
+  return (x / y) * 100.0;
+}
 
-pair<double, double>
-coveragePercentages(vector<shared_ptr<FileComparison>> &comparisons) {
-  pair<int, int> oldCounts = {0, 0};
-  pair<int, int> newCounts = {0, 0};
+template<typename T>
+inline double percent(T x, T y) {
+  return percent(double(x), double(y));
+}
+
+std::pair<double, double>
+coveragePercentages(std::vector<std::shared_ptr<FileComparison>> &comparisons) {
+  std::pair<int, int> oldCounts = {0, 0};
+  std::pair<int, int> newCounts = {0, 0};
   for (auto &cmp : comparisons) {
     if (auto old = cmp->oldItem) {
       oldCounts = oldCounts + old->regionCounts();
     }
     newCounts = newCounts + cmp->newItem->regionCounts();
   }
-  return {(double(newCounts.first) / double(newCounts.second)) * 100.0,
-          (double(oldCounts.first) / double(oldCounts.second)) * 100.0};
+  return { percent(newCounts.first, newCounts.second),
+           percent(oldCounts.first, oldCounts.second) };
 }
 
 double File::coveragePercentage() {
@@ -51,7 +59,7 @@ double File::coveragePercentage() {
   return (totalPercentagePoints / (double)functions.size());
 }
 
-pair<int, int> Function::regionCounts() {
+std::pair<int, int> Function::regionCounts() {
   int regions = 0;
   int regionsExecuted = 0;
   for (auto &region : this->regions) {
@@ -60,24 +68,21 @@ pair<int, int> Function::regionCounts() {
     }
     regions++;
   }
-  return {regionsExecuted, regions};
+  return { regionsExecuted, regions };
 }
 
-pair<int, int> File::regionCounts() {
-  int regions = 0;
-  int regionsExecuted = 0;
+std::pair<int, int> File::regionCounts() {
+  std::pair<int, int> counts = { 0, 0 };
   for (auto &func : functions) {
-    auto pair = func.regionCounts();
-    regionsExecuted += pair.first;
-    regions += pair.second;
+    counts = counts + func.regionCounts();
   }
-  return {regionsExecuted, regions};
+  return counts;
 }
 
-vector<FunctionComparison> FileComparison::functionComparisons() {
-  vector<FunctionComparison> funcComparisons;
+std::vector<FunctionComparison> FileComparison::functionComparisons() {
+  std::vector<FunctionComparison> funcComparisons;
   for (auto &function : newItem->functions) {
-    shared_ptr<Function> oldFunction;
+    std::shared_ptr<Function> oldFunction;
     if (oldItem) {
       auto pair = oldItem->functionMap()->find(function.name);
       if (pair != oldItem->functionMap()->end()) {
@@ -85,13 +90,13 @@ vector<FunctionComparison> FileComparison::functionComparisons() {
       }
     }
     auto func =
-        FunctionComparison(oldFunction, make_shared<Function>(function));
+        FunctionComparison(oldFunction, std::make_shared<Function>(function));
     funcComparisons.emplace_back(func);
   }
   return funcComparisons;
 }
 
-unique_ptr<CoverageMapping> CoverageFilePair::coverageMapping() {
+std::unique_ptr<CoverageMapping> CoverageFilePair::coverageMapping() {
   auto map = CoverageMapping::load(binary, filename);
 
   if (auto error = map.getError()) {
@@ -101,20 +106,22 @@ unique_ptr<CoverageMapping> CoverageFilePair::coverageMapping() {
   return move(map.get());
 }
 
-shared_ptr<map<string, shared_ptr<Function>>> File::functionMap() {
+std::shared_ptr<std::map<std::string, std::shared_ptr<Function>>>
+File::functionMap() {
   if (_functionMap)
     return _functionMap;
-  _functionMap = make_shared<map<string, shared_ptr<Function>>>();
+  _functionMap =
+      std::make_shared<std::map<std::string, std::shared_ptr<Function>>>();
   for (auto &function : functions) {
-    (*_functionMap)[function.name] = make_shared<Function>(function);
+    (*_functionMap)[function.name] = std::make_shared<Function>(function);
   }
   return _functionMap;
 }
 
-map<string, shared_ptr<File>>
+std::map<std::string, std::shared_ptr<File>>
 CoverageFilePair::fileMap(std::string coveredDir) {
   auto mapping = coverageMapping();
-  map<string, shared_ptr<File>> files;
+  std::map<std::string, std::shared_ptr<File>> files;
   for (auto &filename : mapping->getUniqueSourceFiles()) {
     std::string truncatedFilename = filename;
     if (coveredDir != "") {
@@ -125,61 +132,62 @@ CoverageFilePair::fileMap(std::string coveredDir) {
       truncatedFilename = filename.substr(parentPath.size(),
                                           filename.size() - parentPath.size());
     }
-    vector<Function> functions;
+    std::vector<Function> functions;
     for (auto &func : mapping->getCoveredFunctions(filename)) {
       functions.emplace_back(func);
     }
-    files[filename] = make_shared<File>(truncatedFilename, functions);
+    files[filename] = std::make_shared<File>(truncatedFilename, functions);
   }
   return files;
 }
 
-map<std::string, File> fileMapFromYAML(string yamlFile) {
+std::map<std::string, File> fileMapFromYAML(std::string yamlFile) {
   auto buffer = MemoryBuffer::getFile(yamlFile);
   if (auto error = buffer.getError()) {
     exitWithErrorCode(error);
   }
   yaml::Input yin(buffer.get()->getBuffer());
-  vector<File> files;
+  std::vector<File> files;
   yin >> files;
   if (auto error = yin.error()) {
     exitWithErrorCode(error);
   }
-  map<std::string, File> fileMap;
+  std::map<std::string, File> fileMap;
   for (auto &file : files) {
     fileMap[file.name] = file;
   }
   return fileMap;
 }
 
-string FunctionComparison::functionName() {
+std::string FunctionComparison::functionName() {
   auto name = extractSymbol(newItem->name);
   return demangled(name);
 }
 
-vector<shared_ptr<FileComparison>> ProfdataCompare::genComparisons() {
-  vector<shared_ptr<FileComparison>> comparisons;
+std::vector<std::shared_ptr<FileComparison>> ProfdataCompare::genComparisons() {
+  std::vector<std::shared_ptr<FileComparison>> comparisons;
   auto oldFiles = fileMapFromYAML(oldFile);
   auto newFiles = fileMapFromYAML(newFile);
   for (auto &iter : newFiles) {
-    shared_ptr<File> oldFile;
+    std::shared_ptr<File> oldFile;
     auto old = oldFiles.find(iter.first);
     if (old != oldFiles.end()) {
-      oldFile = make_shared<File>(old->second);
+      oldFile = std::make_shared<File>(old->second);
     }
-    auto c =
-        make_shared<FileComparison>(oldFile, make_shared<File>(iter.second));
+    auto newFile = std::make_shared<File>(iter.second);
+    auto c = std::make_shared<FileComparison>(oldFile, newFile);
     comparisons.emplace_back(c);
   }
 
-  sort(comparisons.begin(), comparisons.end(),
-       [](shared_ptr<FileComparison> a, shared_ptr<FileComparison> b) {
-         if (!a)
-           return true;
-         if (!b)
-           return false;
-         return a->coverageDifference() < b->coverageDifference();
-       });
+  std::sort(
+      comparisons.begin(), comparisons.end(),
+      [](std::shared_ptr<FileComparison> a, std::shared_ptr<FileComparison> b) {
+        if (!a)
+          return true;
+        if (!b)
+          return false;
+        return a->coverageDifference() < b->coverageDifference();
+      });
   return comparisons;
 }
 
@@ -239,12 +247,12 @@ int yamlMain(int argc, const char *argv[]) {
 
   CoverageFilePair filePair(file, binary);
   auto map = filePair.fileMap(coveredDir);
-  vector<File> files;
+  std::vector<File> files;
   for (auto &pair : map) {
     files.emplace_back(*pair.second);
   }
 
-  unique_ptr<raw_ostream> os = streamForFile(output);
+  std::unique_ptr<raw_ostream> os = streamForFile(output);
 
   yaml::Output yout(*os);
   yout << files;

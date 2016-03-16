@@ -13,7 +13,6 @@
 #include "MarkdownWriter.hpp"
 
 using namespace llvm;
-using namespace std;
 
 namespace covcompare {
 namespace md {
@@ -29,7 +28,7 @@ std::string MarkdownWriter::formattedFilename(std::string filename) {
   return md::code(filename);
 }
 
-void MarkdownWriter::writeTable(vector<Column> columns, raw_ostream &os) {
+void MarkdownWriter::writeTable(std::vector<Column> columns, raw_ostream &os) {
   os << "| ";
   for (auto &column : columns) {
     os << column.header << " | ";
@@ -62,7 +61,7 @@ void MarkdownWriter::writeTable(vector<Column> columns, raw_ostream &os) {
 }
 
 void MarkdownWriter::writeAnalysis(ProfdataCompare &c) {
-  vector<shared_ptr<FileComparison>> regressed;
+  std::vector<std::shared_ptr<FileComparison>> regressed;
   for (auto &cmp : c.comparisons) {
     if (cmp->coverageDifference() < 0.0) {
       regressed.emplace_back(cmp);
@@ -74,7 +73,7 @@ void MarkdownWriter::writeAnalysis(ProfdataCompare &c) {
     for (auto &cmp : regressed) {
       *c.os << "  - " << md::code(cmp->newItem->name)
             << "'s coverage has regressed "
-            << md::bold(formattedDouble(abs(cmp->coverageDifference())))
+            << md::bold(formattedDouble(std::abs(cmp->coverageDifference())))
             << "\n";
     }
     *c.os << "\n";

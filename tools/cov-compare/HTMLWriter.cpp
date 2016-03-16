@@ -17,14 +17,13 @@
 #include <sys/stat.h>
 #include <chrono>
 
-using namespace std;
 using namespace llvm;
 namespace html {
 /// \returns An HTML-escaped string.
-string escape(string s) {
-  string result;
+std::string escape(std::string s) {
+  std::string result;
   for (size_t i = 0; i < s.size(); ++i) {
-    string token = s.substr(i, 1);
+    std::string token = s.substr(i, 1);
     if (token == "&")
       token = "&amp;";
     else if (token == "<")
@@ -40,18 +39,18 @@ string escape(string s) {
 
 /// \returns A tag around the provided text
 /// (expects the value to be properly escaped).
-string tag(string name, string text) {
+std::string tag(std::string name, std::string text) {
   return "<" + name + ">" + text + "</" + name + ">";
 }
 
 /// \returns An anchor tag with the provided destination and text.
-string a(string dest, string text) {
+std::string a(std::string dest, std::string text) {
   return "<a href='" + dest + "'>" + text + "</a>";
 }
 
 /// \returns Headers of an HTML table, corresponding to the passed-in strings.
-string headerRow(vector<string> headers) {
-  string final;
+std::string headerRow(std::vector<std::string> headers) {
+  std::string final;
   for (auto &val : headers) {
     final += tag("th", val);
   }
@@ -59,8 +58,8 @@ string headerRow(vector<string> headers) {
 }
 
 /// \returns An HTML table row with the provided strings as td rows inside.
-string tr(vector<string> data) {
-  string final;
+std::string tr(std::vector<std::string> data) {
+  std::string final;
   for (auto &val : data) {
     final += tag("td", val);
   }
@@ -68,7 +67,7 @@ string tr(vector<string> data) {
 }
 
 /// \returns A span with the provided class, with the provided text inside.
-string span(string _class, string text) {
+std::string span(std::string _class, std::string text) {
   return "<span class='" + _class + "'>" + text + "</span>";
 }
 }
@@ -77,7 +76,7 @@ namespace covcompare {
 typedef enum { Bad, Warning, Good } CoverageStatus;
 
 /// \returns The class name corresponding to a CoverageStatus.
-string coverageStatusString(CoverageStatus status) {
+std::string coverageStatusString(CoverageStatus status) {
   switch (status) {
   case Bad:
     return "bad";
@@ -98,27 +97,28 @@ CoverageStatus statusForDiff(double diff) {
   }
 }
 
-string HTMLWriter::formattedDiff(double n) {
+std::string HTMLWriter::formattedDiff(double n) {
   auto status = statusForDiff(n);
   auto spanClass = coverageStatusString(status);
   return html::span(spanClass, Writer::formattedDiff(n));
 }
 
-string HTMLWriter::formattedFilename(std::string filename) {
+std::string HTMLWriter::formattedFilename(std::string filename) {
   auto path = sys::path::relative_path(filename);
   auto fn = html::escape(path);
   return html::a(fn + ".html", fn);
 }
 
-void HTMLWriter::writeTable(vector<Column> columns, llvm::raw_ostream &os) {
+void HTMLWriter::writeTable(std::vector<Column> columns,
+                            llvm::raw_ostream &os) {
   os << "<table>";
-  vector<string> headers;
+  std::vector<std::string> headers;
   for (auto &column : columns) {
     headers.emplace_back(column.header);
   }
   os << html::headerRow(headers);
   for (size_t i = 0; i < columns[0].elements.size(); i++) {
-    vector<string> elements;
+    std::vector<std::string> elements;
     for (auto &column : columns) {
       elements.emplace_back(column.elements[i]);
     }
@@ -143,7 +143,7 @@ void HTMLWriter::writeComparisonReport(FileComparison &comparison) {
   if (auto err = sys::fs::create_directories(base)) {
     exitWithErrorCode(err);
   }
-  error_code error;
+  std::error_code error;
   raw_fd_ostream os(newName, error, sys::fs::F_RW);
   if (error)
     exitWithErrorCode(error);
@@ -155,18 +155,18 @@ void HTMLWriter::writeComparisonReport(FileComparison &comparison) {
     Column diffCol("Coverage Difference", Column::Alignment::Center);
     for (auto &funcComparison : comparison.functionComparisons()) {
       double newCoverage = funcComparison.newItem->coveragePercentage();
-      string newCovString = formattedDouble(newCoverage);
-      string oldCovString = "N/A";
-      string diffString = "N/A";
+      std::string newCovString = formattedDouble(newCoverage);
+      std::string oldCovString = "N/A";
+      std::string diffString = "N/A";
       if (auto func = funcComparison.oldItem) {
         double oldCoverage = func->coveragePercentage();
         oldCovString = formattedDouble(oldCoverage);
         diffString = formattedDiff(newCoverage - oldCoverage);
       }
       auto regionCounts = funcComparison.newItem->regionCounts();
-      regionCol.add(to_string(regionCounts.first) + "/" +
-                    to_string(regionCounts.second));
-      string symbol = funcComparison.functionName();
+      regionCol.add(std::to_string(regionCounts.first) + "/" +
+                    std::to_string(regionCounts.second));
+      std::string symbol = funcComparison.functionName();
       functionCol.add(html::escape(symbol));
       oldCovCol.add(oldCovString);
       newCovCol.add(newCovString);
@@ -178,13 +178,13 @@ void HTMLWriter::writeComparisonReport(FileComparison &comparison) {
 }
 
 void HTMLWriter::writeSummary(ProfdataCompare &comparer) {
-  error_code error;
+  std::error_code error;
   raw_fd_ostream os(dirname + "/index.html", error, sys::fs::F_RW);
   if (error)
     exitWithErrorCode(error);
 
-  string oldFn = sys::path::filename(comparer.oldFile);
-  string newFn = sys::path::filename(comparer.newFile);
+  std::string oldFn = sys::path::filename(comparer.oldFile);
+  std::string newFn = sys::path::filename(comparer.newFile);
   auto title = oldFn + " vs. " + newFn;
 
   wrapHTMLOutput(os, title, [this, &comparer, &os] {
@@ -193,37 +193,37 @@ void HTMLWriter::writeSummary(ProfdataCompare &comparer) {
 }
 
 void HTMLWriter::writeCSS(raw_ostream &os) {
-  string css = "body {"
-               "  font-family: -apple-system, sans-serif;"
-               "}"
-               "footer {"
-               "  padding: 15px;"
-               "}"
-               "a {"
-               "  text-decoration: none;"
-               "}"
-               "table, th, td {"
-               "  padding: 10px;"
-               "  text-align: left;"
-               "  border: 1px solid #ddd;"
-               "  border-collapse: collapse;"
-               "}"
-               ".warning {"
-               "  color: #f9a03f;"
-               "  font-weight: normal;"
-               "}"
-               ".bad {"
-               "  color: #ba1b1d;"
-               "  font-weight: bold;"
-               "}"
-               ".good {"
-               "  color: #1cc000;"
-               "  font-weight: normal;"
-               "}";
+  std::string css = "body {"
+                    "  font-family: -apple-system, sans-serif;"
+                    "}"
+                    "footer {"
+                    "  padding: 15px;"
+                    "}"
+                    "a {"
+                    "  text-decoration: none;"
+                    "}"
+                    "table, th, td {"
+                    "  padding: 10px;"
+                    "  text-align: left;"
+                    "  border: 1px solid #ddd;"
+                    "  border-collapse: collapse;"
+                    "}"
+                    ".warning {"
+                    "  color: #f9a03f;"
+                    "  font-weight: normal;"
+                    "}"
+                    ".bad {"
+                    "  color: #ba1b1d;"
+                    "  font-weight: bold;"
+                    "}"
+                    ".good {"
+                    "  color: #1cc000;"
+                    "  font-weight: normal;"
+                    "}";
   os << css;
 }
 
-void HTMLWriter::wrapHTMLOutput(raw_ostream &out, string title,
+void HTMLWriter::wrapHTMLOutput(raw_ostream &out, std::string title,
                                 HTMLOutputFunction innerGen) {
   out << "<!DOCTYPE html>\n"
          "<html>\n"
@@ -238,8 +238,8 @@ void HTMLWriter::wrapHTMLOutput(raw_ostream &out, string title,
          "  <body>";
   innerGen();
 
-  auto end = chrono::system_clock::now();
-  auto end_time = chrono::system_clock::to_time_t(end);
+  auto end = std::chrono::system_clock::now();
+  auto end_time = std::chrono::system_clock::to_time_t(end);
   auto date_str = ctime(&end_time);
   out << html::tag("footer",
                    "Generated by cov-compare on " + html::escape(date_str));

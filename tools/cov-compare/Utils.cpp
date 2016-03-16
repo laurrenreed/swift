@@ -20,12 +20,11 @@
 #include "ProfdataCompare.hpp"
 #include <cxxabi.h>
 
-using namespace std;
 using namespace llvm;
 
 namespace covcompare {
 void withColor(raw_ostream::Colors color, bool bold, bool bg,
-               function<void()> f) {
+               std::function<void()> f) {
   bool colored = sys::Process::StandardErrHasColors();
   if (colored)
     ferrs().changeColor(color, bold, bg);
@@ -40,7 +39,7 @@ void warn(std::string Text) {
   ferrs() << Text << "\n";
 }
 
-string extractSymbol(string name) {
+std::string extractSymbol(std::string name) {
   auto pair = StringRef(name).split(':');
   if (pair.second == "") {
     return pair.first;
@@ -49,12 +48,12 @@ string extractSymbol(string name) {
   }
 }
 
-string demangled(string symbol) {
+std::string demangled(std::string symbol) {
   auto prefix = symbol.substr(0, 2);
   if (prefix == "_Z") {
     auto demangled = abi::__cxa_demangle(symbol.c_str(), 0, 0, NULL);
     if (demangled) {
-      string s(demangled);
+      std::string s(demangled);
       free(demangled);
       return s;
     }
@@ -64,16 +63,16 @@ string demangled(string symbol) {
   return symbol;
 }
 
-void exitWithErrorCode(error_code error) {
+void exitWithErrorCode(std::error_code error) {
   withColor(raw_ostream::RED, /* bold = */ true, /* bg = */ false,
             [] { ferrs() << "error: "; });
   ferrs() << error.message() << "\n";
   exit(error.value());
 }
 
-unique_ptr<raw_ostream> streamForFile(string file) {
+std::unique_ptr<raw_ostream> streamForFile(std::string file) {
   if (file.size()) {
-    error_code error;
+    std::error_code error;
     auto os = make_unique<raw_fd_ostream>(file, error, sys::fs::F_RW);
     if (error)
       exitWithErrorCode(error);

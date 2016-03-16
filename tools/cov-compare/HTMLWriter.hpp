@@ -29,11 +29,11 @@ typedef std::function<void()> HTMLOutputFunction;
 /// The directory structure looks like:
 ///
 ///   - main directory:
-///     - index.html [a summary of each file and the coverage diff]
-///     - file1.cpp.html
-///     - file2.cpp.html
+///     - /index.html [a summary of each file and the coverage diff]
+///     - /dir1/file1.cpp.html
+///     - /dir1/subdir1/.../file2.cpp.html
 ///     - ...
-///     - fileN.cpp.html
+///     - /dirN/fileM.cpp.html
 struct HTMLWriter : public Writer {
   /// The path to the output directory.
   std::string dirname;
