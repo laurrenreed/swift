@@ -28,7 +28,7 @@ std::string MarkdownWriter::formattedFilename(std::string filename) {
   return md::code(filename);
 }
 
-void MarkdownWriter::writeTable(std::vector<Column> columns, raw_ostream &os) {
+void MarkdownWriter::writeTable(std::vector<Column> &columns, raw_ostream &os) {
   os << "| ";
   for (auto &column : columns) {
     os << column.header << " | ";
@@ -60,13 +60,20 @@ void MarkdownWriter::writeTable(std::vector<Column> columns, raw_ostream &os) {
   }
 }
 
-void MarkdownWriter::writeAnalysis(ProfdataCompare &c) {
-  std::vector<std::shared_ptr<FileComparison>> regressed;
-  for (auto &cmp : c.comparisons) {
-    if (cmp->coverageDifference() < 0.0) {
-      regressed.emplace_back(cmp);
-    }
-  }
+void MarkdownWriter::writeDropdownTable(
+    std::vector<std::shared_ptr<FileComparison>> &comparisons,
+    std::string title, bool expanded, raw_ostream &os) {
+
+  auto table = tableForComparisons(comparisons);
+  os << "<details" << (expanded ? " open" : "") << ">\n  <summary>"
+     << title << "</summary>\n\n";
+  writeTable(table, os);
+  os << "\n\n</details>\n";
+}
+
+void MarkdownWriter::writeAnalysis(
+    ProfdataCompare &c,
+    std::vector<std::shared_ptr<FileComparison>> &regressed) {
   if (regressed.size()) {
     *c.os << "There are " << regressed.size() << " areas in this pull "
           << "request that need attention:\n\n";
@@ -84,8 +91,35 @@ void MarkdownWriter::writeAnalysis(ProfdataCompare &c) {
 }
 
 void MarkdownWriter::write(ProfdataCompare &comparer) {
-  writeAnalysis(comparer);
-  auto table = tableForComparisons(comparer.comparisons);
-  writeTable(table, *comparer.os);
+  std::vector<std::shared_ptr<FileComparison>> regressed;
+  std::vector<std::shared_ptr<FileComparison>> unchanged;
+  std::vector<std::shared_ptr<FileComparison>> improved;
+  for (auto &cmp : comparer.comparisons) {
+    double diff = cmp->coverageDifference();
+    if (diff < 0.0) {
+      regressed.emplace_back(cmp);
+    } /* else if (diff == 0.0) {
+      unchanged.emplace_back(cmp);
+    } else {
+      improved.emplace_back(cmp);
+    } */
+  }
+  writeAnalysis(comparer, regressed);
+  auto coverages = covcompare::coveragePercentages(comparer.comparisons);
+  
+#if 0
+  fnCol.insert(0, "Total");
+  prevCol.insert(0, formattedDouble(oldTotal));
+  currCol.insert(0, formattedDouble(oldTotal));
+  regionCol.insert(0, "N/A");
+  diffCol.insert(0, formattedDouble(newTotal - oldTotal));
+
+  writeDropdownTable(regressed, "Regressions", true, *comparer.os);
+  writeDropdownTable(improved, "Improvements", true, *comparer.os);
+  writeDropdownTable(unchanged, "Unchanged", false, *comparer.os);
+#endif
+  
+  auto cols = tableForComparisons(comparer.comparisons);
+  writeTable(cols, *comparer.os);
 }
 }

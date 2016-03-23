@@ -44,14 +44,6 @@ std::vector<Column> Writer::tableForComparisons(
                   std::to_string(pair.second));
     diffCol.add(diffString);
   }
-  auto coverages = covcompare::coveragePercentages(comparisons);
-  auto oldTotal = coverages.first;
-  auto newTotal = coverages.second;
-  fnCol.insert(0, "Total");
-  prevCol.insert(0, formattedDouble(oldTotal));
-  currCol.insert(0, formattedDouble(oldTotal));
-  regionCol.insert(0, "N/A");
-  diffCol.insert(0, formattedDouble(newTotal - oldTotal));
   return {fnCol, prevCol, currCol, regionCol, diffCol};
 }
 }

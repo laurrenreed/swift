@@ -30,8 +30,12 @@ std::string link(std::string desc, std::string url);
 /// A class that wraps multiple columns and outputs them as a Markdown table.
 class MarkdownWriter : public Writer {
 private:
-  void writeAnalysis(ProfdataCompare &c);
-  virtual void writeTable(std::vector<Column> columns, llvm::raw_ostream &os);
+  void writeAnalysis(ProfdataCompare &c,
+                     std::vector<std::shared_ptr<FileComparison>> &regressed);
+  void
+  writeDropdownTable(std::vector<std::shared_ptr<FileComparison>> &comparisons,
+                     std::string title, bool expanded, raw_ostream &os);
+  virtual void writeTable(std::vector<Column> &columns, llvm::raw_ostream &os);
   virtual std::string formattedFilename(std::string filename);
 
 public:

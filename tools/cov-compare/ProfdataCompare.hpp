@@ -34,7 +34,7 @@ namespace covcompare {
 struct Options {
 public:
   /// The output formats supported by this tool.
-  typedef enum { HTML, Markdown } Format;
+  typedef enum { HTML, Markdown, CSV } Format;
 
   /// The output format.
   Format output;
@@ -66,15 +66,7 @@ public:
   std::string name;
   std::vector<Region> regions;
   uint64_t executionCount;
-  double coveragePercentage() {
-    int counted = 0;
-    for (auto &region : regions) {
-      if (region.executionCount > 0) {
-        counted++;
-      }
-    }
-    return ((double)counted / (double)regions.size()) * 100;
-  }
+  double coveragePercentage();
   std::pair<int, int> regionCounts();
   Function(std::string name, std::vector<Region> regions,
            uint64_t executionCount)
@@ -83,7 +75,9 @@ public:
   Function(llvm::coverage::FunctionRecord record) {
     name = extractSymbol(record.Name);
     for (auto &region : record.CountedRegions) {
-      if (region.Kind == CounterMappingRegion::RegionKind::SkippedRegion)
+      if (region.FileID != region.ExpandedFileID)
+        continue;
+      if (region.Kind != CounterMappingRegion::RegionKind::CodeRegion)
         continue;
       Region r(region.ColumnStart, region.ColumnEnd, region.LineStart,
                region.LineEnd, region.ExecutionCount);
@@ -241,9 +235,33 @@ public:
 
   void compare();
 };
+  
+template <typename T, typename U>
+inline std::pair<T, U> operator+(const std::pair<T, U> &l,
+                                 const std::pair<T, U> &r) {
+  return {l.first + r.first, l.second + r.second};
+}
 
+inline double percent(double x, double y) { return (x / y) * 100.0; }
+
+template <typename T> inline double percent(T x, T y) {
+  return percent(double(x), double(y));
+}
+
+template <typename ComparisonType>
 std::pair<double, double>
-coveragePercentages(std::vector<std::shared_ptr<FileComparison>> &comparisons);
+coveragePercentages(std::vector<std::shared_ptr<ComparisonType>> &comparisons) {
+  std::pair<int, int> oldCounts = {0, 0};
+  std::pair<int, int> newCounts = {0, 0};
+  for (auto &cmp : comparisons) {
+    if (auto old = cmp->oldItem) {
+      oldCounts = oldCounts + old->regionCounts();
+    }
+    newCounts = newCounts + cmp->newItem->regionCounts();
+  }
+  return {percent(newCounts.first, newCounts.second),
+          percent(oldCounts.first, oldCounts.second)};
+}
 
 int compareMain(int argc, const char *argv[]);
 int yamlMain(int argc, const char *argv[]);

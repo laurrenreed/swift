@@ -14,65 +14,40 @@
 #include "llvm/Support/CommandLine.h"
 #include "HTMLWriter.hpp"
 #include "MarkdownWriter.hpp"
+#include "CSVWriter.hpp"
 #include "YAMLWriter.hpp"
 
 using namespace llvm;
 using namespace coverage;
 
 namespace covcompare {
-template <typename T, typename U>
-inline std::pair<T, U> operator+(const std::pair<T, U> &l,
-                                 const std::pair<T, U> &r) {
-  return {l.first + r.first, l.second + r.second};
-}
-  
-inline double percent(double x, double y) {
-  return (x / y) * 100.0;
-}
-
-template<typename T>
-inline double percent(T x, T y) {
-  return percent(double(x), double(y));
-}
-
-std::pair<double, double>
-coveragePercentages(std::vector<std::shared_ptr<FileComparison>> &comparisons) {
-  std::pair<int, int> oldCounts = {0, 0};
-  std::pair<int, int> newCounts = {0, 0};
-  for (auto &cmp : comparisons) {
-    if (auto old = cmp->oldItem) {
-      oldCounts = oldCounts + old->regionCounts();
-    }
-    newCounts = newCounts + cmp->newItem->regionCounts();
-  }
-  return { percent(newCounts.first, newCounts.second),
-           percent(oldCounts.first, oldCounts.second) };
-}
 
 double File::coveragePercentage() {
   if (functions.empty())
     return 100.0;
-  double totalPercentagePoints = 0;
-  for (auto &func : functions) {
-    totalPercentagePoints += func.coveragePercentage();
-  }
-  return (totalPercentagePoints / (double)functions.size());
+  auto counts = regionCounts();
+  return percent(counts.first, counts.second);
+}
+
+double Function::coveragePercentage() {
+  if (regions.empty())
+    return 100.0;
+  auto counts = regionCounts();
+  return percent(counts.first, counts.second);
 }
 
 std::pair<int, int> Function::regionCounts() {
-  int regions = 0;
   int regionsExecuted = 0;
   for (auto &region : this->regions) {
     if (region.executionCount > 0) {
       regionsExecuted++;
     }
-    regions++;
   }
-  return { regionsExecuted, regions };
+  return {regionsExecuted, regions.size()};
 }
 
 std::pair<int, int> File::regionCounts() {
-  std::pair<int, int> counts = { 0, 0 };
+  std::pair<int, int> counts = {0, 0};
   for (auto &func : functions) {
     counts = counts + func.regionCounts();
   }
@@ -199,6 +174,9 @@ void ProfdataCompare::compare() {
   case Options::Markdown:
     MarkdownWriter().write(*this);
     break;
+  case Options::CSV:
+    CSVWriter().write(*this);
+    break;
   }
 }
 
@@ -214,9 +192,10 @@ int compareMain(int argc, const char *argv[]) {
                                cl::Required);
   cl::opt<Options::Format> format(
       "f", cl::desc("Format to output comparison"),
-      cl::values(
-          clEnumValN(Options::HTML, "html", "HTML output"),
-          clEnumValN(Options::Markdown, "markdown", "Markdown table output"),
+      cl::values(clEnumValN(Options::HTML, "html", "HTML output"),
+                 clEnumValN(Options::Markdown, "markdown",
+                            "Markdown table output"),
+                 clEnumValN(Options::CSV, "csv", "CSV table output"),
           clEnumValEnd),
       cl::init(Options::Markdown));
   cl::ParseCommandLineOptions(argc, argv);

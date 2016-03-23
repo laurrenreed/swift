@@ -47,7 +47,7 @@ struct HTMLWriter : public Writer {
   void writeComparisonReport(FileComparison &comparison);
 
   /// Writes a list of \a Columns as an HTML table.
-  virtual void writeTable(std::vector<Column> columns, llvm::raw_ostream &os);
+  virtual void writeTable(std::vector<Column> &columns, llvm::raw_ostream &os);
 
   /// Writes a summary of each file with a link to the in-depth file page,
   /// and a simple diff of the coverage.

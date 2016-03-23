@@ -109,7 +109,7 @@ std::string HTMLWriter::formattedFilename(std::string filename) {
   return html::a(fn + ".html", fn);
 }
 
-void HTMLWriter::writeTable(std::vector<Column> columns,
+void HTMLWriter::writeTable(std::vector<Column> &columns,
                             llvm::raw_ostream &os) {
   os << "<table>";
   std::vector<std::string> headers;
@@ -172,8 +172,14 @@ void HTMLWriter::writeComparisonReport(FileComparison &comparison) {
       newCovCol.add(newCovString);
       diffCol.add(diffString);
     }
-    this->writeTable({functionCol, oldCovCol, newCovCol, regionCol, diffCol},
-                     os);
+    std::vector<Column> table = {
+      functionCol,
+      oldCovCol,
+      newCovCol,
+      regionCol,
+      diffCol
+    };
+    this->writeTable(table, os);
   });
 }
 
@@ -188,38 +194,14 @@ void HTMLWriter::writeSummary(ProfdataCompare &comparer) {
   auto title = oldFn + " vs. " + newFn;
 
   wrapHTMLOutput(os, title, [this, &comparer, &os] {
-    this->writeTable(tableForComparisons(comparer.comparisons), os);
+    auto table = tableForComparisons(comparer.comparisons);
+    this->writeTable(table, os);
   });
 }
 
 void HTMLWriter::writeCSS(raw_ostream &os) {
-  std::string css = "body {"
-                    "  font-family: -apple-system, sans-serif;"
-                    "}"
-                    "footer {"
-                    "  padding: 15px;"
-                    "}"
-                    "a {"
-                    "  text-decoration: none;"
-                    "}"
-                    "table, th, td {"
-                    "  padding: 10px;"
-                    "  text-align: left;"
-                    "  border: 1px solid #ddd;"
-                    "  border-collapse: collapse;"
-                    "}"
-                    ".warning {"
-                    "  color: #f9a03f;"
-                    "  font-weight: normal;"
-                    "}"
-                    ".bad {"
-                    "  color: #ba1b1d;"
-                    "  font-weight: bold;"
-                    "}"
-                    ".good {"
-                    "  color: #1cc000;"
-                    "  font-weight: normal;"
-                    "}";
+// bring in the `css` variable.
+#include "CoverageCSS.inc"
   os << css;
 }
 

@@ -45,7 +45,7 @@ struct Column {
 
 class Writer {
 protected:
-  virtual void writeTable(std::vector<Column> columns,
+  virtual void writeTable(std::vector<Column> &columns,
                           llvm::raw_ostream &os) = 0;
   std::string formattedDouble(double n);
   virtual std::string formattedDiff(double n);
