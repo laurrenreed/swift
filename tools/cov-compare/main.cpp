@@ -37,7 +37,7 @@ int main(int argc, const char **argv) {
                       .Case("compare", compareMain)
                       .Case("yaml", yamlMain)
                       .Default(helpMain);
-
+    
   std::string invocation = std::string(argv[0]) + " " + argv[1];
   argv[1] = invocation.c_str();
   return function(argc - 1, argv + 1);

@@ -15,6 +15,7 @@ import os
 import shutil
 import socket
 import sys
+import logging
 import subprocess
 import tarfile
 from multiprocessing import JoinableQueue
