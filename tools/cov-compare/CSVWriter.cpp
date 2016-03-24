@@ -25,11 +25,10 @@ namespace covcompare {
       os << col.header << ",";
     }
     os << "\n";
-    for (size_t i = 0; i < columns[0].elements.size(); i++) {
-      auto it = columns.begin();
-      for (; it != columns.end(); ++it) {
-        os << quote(it->elements[i]);
-        if (it + 1 != columns.end()) {
+    for (size_t i = 0; i < columns[0].elements.size(); ++i) {
+      for (size_t j = 0; j < columns.size(); ++j) {
+        os << quote(columns[j].elements[i]);
+        if (j < columns.size() - 1) {
           os << ",";
         }
       }

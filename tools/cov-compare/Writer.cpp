@@ -24,7 +24,8 @@ std::vector<Column> Writer::tableForComparisons(
   Column fnCol("Filename");
   Column prevCol("Previous Coverage", Column::Alignment::Center);
   Column currCol("Current Coverage", Column::Alignment::Center);
-  Column regionCol("Regions Exec'd", Column::Alignment::Center);
+  Column regionCol("Regions", Column::Alignment::Center);
+  Column regionExecCol("Regions Exec'd", Column::Alignment::Center);
   Column diffCol("Coverage Difference", Column::Alignment::Center);
   for (auto &cmp : comparisons) {
     double newPercentage = cmp->newItem->coveragePercentage();
@@ -40,10 +41,10 @@ std::vector<Column> Writer::tableForComparisons(
     prevCol.add(oldCovString);
     currCol.add(newCovString);
     auto pair = cmp->newItem->regionCounts();
-    regionCol.add(std::to_string(pair.first) + "/" +
-                  std::to_string(pair.second));
+    regionCol.add(std::to_string(pair.first));
+    regionExecCol.add(std::to_string(pair.second));
     diffCol.add(diffString);
   }
-  return {fnCol, prevCol, currCol, regionCol, diffCol};
+  return {fnCol, prevCol, currCol, regionCol, regionExecCol, diffCol};
 }
 }

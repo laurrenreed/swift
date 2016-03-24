@@ -198,13 +198,7 @@ void HTMLWriter::writeSummary(ProfdataCompare &comparer) {
     this->writeTable(table, os);
   });
 }
-
-void HTMLWriter::writeCSS(raw_ostream &os) {
-// bring in the `css` variable.
-#include "CoverageCSS.inc"
-  os << css;
-}
-
+  
 void HTMLWriter::wrapHTMLOutput(raw_ostream &out, std::string title,
                                 HTMLOutputFunction innerGen) {
   out << "<!DOCTYPE html>\n"
@@ -213,9 +207,13 @@ void HTMLWriter::wrapHTMLOutput(raw_ostream &out, std::string title,
       << "    " << html::tag("title", title)
       << "    <meta name='viewport'"
          "content='width=device-width, initial-scale=1'>";
-  out << "    <style>";
-  writeCSS(out);
-  out << "    </style>";
+  out << "    <style>\n";
+  
+  // bring in the `css` variable.
+#include "CoverageCSS.inc"
+  out << css << "\n";
+  
+  out << "    </style>\n";
   out << "  </head>\n"
          "  <body>";
   innerGen();

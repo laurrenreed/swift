@@ -105,7 +105,6 @@ void MarkdownWriter::write(ProfdataCompare &comparer) {
     } */
   }
   writeAnalysis(comparer, regressed);
-  auto coverages = covcompare::coveragePercentages(comparer.comparisons);
   
 #if 0
   fnCol.insert(0, "Total");

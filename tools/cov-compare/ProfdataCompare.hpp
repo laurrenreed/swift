@@ -29,6 +29,17 @@ using namespace llvm;
 using namespace coverage;
 
 namespace covcompare {
+template <typename T, typename U>
+inline std::pair<T, U> operator+(const std::pair<T, U> &l,
+                                 const std::pair<T, U> &r) {
+  return {l.first + r.first, l.second + r.second};
+}
+
+inline double percent(double x, double y) { return (x / y) * 100.0; }
+
+template <typename T> inline double percent(T x, T y) {
+  return percent(double(x), double(y));
+}
 
 /// A struct that stores output options.
 struct Options {
@@ -180,6 +191,24 @@ public:
       : Comparison(oldFile, newFile) {}
 };
 
+template <typename ComparisonT>
+struct RegionReport {
+  std::pair<int, int> oldRegionCounts;
+  std::pair<int, int> newRegionCounts;
+  std::pair<double, double> coveragePercentages() {
+    return {percent(oldRegionCounts.first, oldRegionCounts.second),
+            percent(newRegionCounts.first, newRegionCounts.second)};
+  }
+  RegionReport(std::vector<std::shared_ptr<ComparisonT>> comparisons) {
+    for (auto &cmp : comparisons) {
+      if (auto old = cmp->oldItem) {
+        oldRegionCounts = oldRegionCounts + old->regionCounts();
+      }
+      newRegionCounts = newRegionCounts + cmp->newItem->regionCounts();
+    }
+  }
+};
+
 /// A struct that represents a pair of binary file and profdata file,
 /// which reads and digests the contents of those files.
 struct CoverageFilePair {
@@ -235,33 +264,6 @@ public:
 
   void compare();
 };
-  
-template <typename T, typename U>
-inline std::pair<T, U> operator+(const std::pair<T, U> &l,
-                                 const std::pair<T, U> &r) {
-  return {l.first + r.first, l.second + r.second};
-}
-
-inline double percent(double x, double y) { return (x / y) * 100.0; }
-
-template <typename T> inline double percent(T x, T y) {
-  return percent(double(x), double(y));
-}
-
-template <typename ComparisonType>
-std::pair<double, double>
-coveragePercentages(std::vector<std::shared_ptr<ComparisonType>> &comparisons) {
-  std::pair<int, int> oldCounts = {0, 0};
-  std::pair<int, int> newCounts = {0, 0};
-  for (auto &cmp : comparisons) {
-    if (auto old = cmp->oldItem) {
-      oldCounts = oldCounts + old->regionCounts();
-    }
-    newCounts = newCounts + cmp->newItem->regionCounts();
-  }
-  return {percent(newCounts.first, newCounts.second),
-          percent(oldCounts.first, oldCounts.second)};
-}
 
 int compareMain(int argc, const char *argv[]);
 int yamlMain(int argc, const char *argv[]);

@@ -38,10 +38,6 @@ struct HTMLWriter : public Writer {
   /// The path to the output directory.
   std::string dirname;
 
-  /// Writes a basic CSS file that has CSS classes
-  /// for good, okay, and bad coverage.
-  void writeCSS(raw_ostream &os);
-
   /// Writes a detailed list of functions within a comparison,
   /// and their current coverage status.
   void writeComparisonReport(FileComparison &comparison);
