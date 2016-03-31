@@ -39,7 +39,6 @@ template <> struct MappingTraits<covcompare::Region> {
     io.mapRequired("line-end", region.lineEnd);
     io.mapRequired("count", region.executionCount);
   }
-  static const bool flow = true;
 };
 
 template <> struct MappingTraits<covcompare::Function> {
@@ -48,7 +47,6 @@ template <> struct MappingTraits<covcompare::Function> {
     io.mapRequired("regions", function.regions);
     io.mapRequired("count", function.executionCount);
   }
-  static const bool flow = true;
 };
 
 template <> struct MappingTraits<covcompare::File> {
