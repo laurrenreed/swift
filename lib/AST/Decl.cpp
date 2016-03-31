@@ -43,8 +43,21 @@
 
 using namespace swift;
 
-bool impl::isTestingEnabled(const ValueDecl *VD) {
-  return VD->getModuleContext()->isTestingEnabled();
+bool impl::isInternalDeclEffectivelyPublic(const ValueDecl *VD) {
+  assert(VD->getFormalAccess() == Accessibility::Internal);
+
+  if (VD->getAttrs().hasAttribute<VersionedAttr>())
+    return true;
+
+  if (auto *fn = dyn_cast<FuncDecl>(VD))
+    if (auto *ASD = fn->getAccessorStorageDecl())
+      if (ASD->getAttrs().hasAttribute<VersionedAttr>())
+        return true;
+
+  if (VD->getModuleContext()->isTestingEnabled())
+    return true;
+
+  return false;
 }
 
 clang::SourceLocation ClangNode::getLocation() const {
@@ -299,6 +312,13 @@ bool Decl::isUserAccessible() const {
     return VD->isUserAccessible();
   }
   return true;
+}
+
+bool Decl::canHaveComment() const {
+  return !this->hasClangNode() &&
+         (isa<ValueDecl>(this) || isa<ExtensionDecl>(this)) &&
+         !isa<ParamDecl>(this) &&
+         (!isa<AbstractTypeParamDecl>(this) || isa<AssociatedTypeDecl>(this));
 }
 
 Module *Decl::getModuleContext() const {
@@ -724,10 +744,8 @@ loadAllConformances(const T *container,
                         container->getASTContext().AllocateCopy(Conformances));
 }
 
-DeclRange NominalTypeDecl::getMembers(bool forceDelayedMembers) const {
+DeclRange NominalTypeDecl::getMembers() const {
   loadAllMembers();
-  if (forceDelayedMembers)
-    const_cast<NominalTypeDecl*>(this)->forceDelayedMemberDecls();
   return IterableDeclContext::getMembers();
 }
 
@@ -805,7 +823,7 @@ void ExtensionDecl::setGenericSignature(GenericSignature *sig) {
   GenericSig = sig;
 }
 
-DeclRange ExtensionDecl::getMembers(bool forceDelayedMembers) const {
+DeclRange ExtensionDecl::getMembers() const {
   loadAllMembers();
   return IterableDeclContext::getMembers();
 }
@@ -973,14 +991,10 @@ StaticSpellingKind PatternBindingDecl::getCorrectStaticSpelling() const {
 bool PatternBindingDecl::hasStorage() const {
   // Walk the pattern, to check to see if any of the VarDecls included in it
   // have storage.
-  bool HasStorage = false;
   for (auto entry : getPatternList())
-    entry.getPattern()->forEachVariable([&](VarDecl *VD) {
-      if (VD->hasStorage())
-        HasStorage = true;
-    });
-
-  return HasStorage;
+    if (entry.getPattern()->hasStorage())
+      return true;
+  return false;
 }
 
 void PatternBindingDecl::setPattern(unsigned i, Pattern *P) {
@@ -1039,15 +1053,6 @@ static bool isPolymorphic(const AbstractStorageDecl *storage) {
   llvm_unreachable("bad DeclKind");
 }
 
-static ResilienceExpansion getResilienceExpansion(const DeclContext *DC) {
-  if (auto *AFD = dyn_cast<AbstractFunctionDecl>(DC))
-    if (AFD->isTransparent() &&
-        AFD->getFormalAccess() == Accessibility::Public)
-      return ResilienceExpansion::Minimal;
-
-  return ResilienceExpansion::Maximal;
-}
-
 /// Determines the access semantics to use in a DeclRefExpr or
 /// MemberRefExpr use of this value in the specified context.
 AccessSemantics
@@ -1055,7 +1060,7 @@ ValueDecl::getAccessSemanticsFromContext(const DeclContext *UseDC) const {
   // If we're inside a @_transparent function, use the most conservative
   // access pattern, since we may be inlined from a different resilience
   // domain.
-  ResilienceExpansion expansion = getResilienceExpansion(UseDC);
+  ResilienceExpansion expansion = UseDC->getResilienceExpansion();
 
   if (auto *var = dyn_cast<AbstractStorageDecl>(this)) {
     // Observing member are accessed directly from within their didSet/willSet
@@ -1226,7 +1231,13 @@ bool AbstractStorageDecl::hasFixedLayout() const {
 
   // Must use resilient access patterns.
   assert(getDeclContext()->isModuleScopeContext());
-  return !getDeclContext()->getParentModule()->isResilienceEnabled();
+  switch (getDeclContext()->getParentModule()->getResilienceStrategy()) {
+  case ResilienceStrategy::Resilient:
+    return false;
+  case ResilienceStrategy::Fragile:
+  case ResilienceStrategy::Default:
+    return true;
+  }
 }
 
 bool AbstractStorageDecl::hasFixedLayout(ModuleDecl *M,
@@ -1761,7 +1772,13 @@ bool NominalTypeDecl::hasFixedLayout() const {
     return true;
 
   // Otherwise, access via indirect "resilient" interfaces.
-  return !getParentModule()->isResilienceEnabled();
+  switch (getParentModule()->getResilienceStrategy()) {
+  case ResilienceStrategy::Resilient:
+    return false;
+  case ResilienceStrategy::Fragile:
+  case ResilienceStrategy::Default:
+    return true;
+  }
 }
 
 bool NominalTypeDecl::hasFixedLayout(ModuleDecl *M,
@@ -2718,6 +2735,26 @@ GenericParamList *ProtocolDecl::createGenericParams(DeclContext *dc) {
   return result;
 }
 
+/// Returns the default witness for a requirement, or nullptr if there is
+/// no default.
+ConcreteDeclRef ProtocolDecl::getDefaultWitness(ValueDecl *requirement) const {
+  loadAllMembers();
+
+  auto found = DefaultWitnesses.find(requirement);
+  if (found == DefaultWitnesses.end())
+    return nullptr;
+  return found->second;
+}
+
+/// Record the default witness for a requirement.
+void ProtocolDecl::setDefaultWitness(ValueDecl *requirement,
+                                     ConcreteDeclRef witness) {
+  assert(witness);
+  auto pair = DefaultWitnesses.insert(std::make_pair(requirement, witness));
+  assert(pair.second && "Already have a default witness!");
+  (void) pair;
+}
+
 /// \brief Return true if the 'getter' is mutating, i.e. that it requires an
 /// lvalue base to be accessed.
 bool AbstractStorageDecl::isGetterMutating() const {
@@ -3088,8 +3125,7 @@ ObjCSelector AbstractStorageDecl::getObjCGetterSelector(
   // If the Swift name starts with the word "is", use that Swift name as the
   // getter name.
   auto var = cast<VarDecl>(this);
-  if (ctx.LangOpts.OmitNeedlessWords &&
-      camel_case::getFirstWord(var->getName().str()) == "is")
+  if (camel_case::getFirstWord(var->getName().str()) == "is")
     return ObjCSelector(ctx, 0, { var->getName() });
 
   // The getter selector is the property name itself.
@@ -3322,9 +3358,9 @@ bool VarDecl::isSelfParameter() const {
 
 /// Return true if this stored property needs to be accessed with getters and
 /// setters for Objective-C.
-bool AbstractStorageDecl::hasObjCGetterAndSetter() const {
+bool AbstractStorageDecl::hasForeignGetterAndSetter() const {
   if (auto override = getOverriddenDecl())
-    return override->hasObjCGetterAndSetter();
+    return override->hasForeignGetterAndSetter();
 
   if (!isObjC())
     return false;
@@ -3332,10 +3368,12 @@ bool AbstractStorageDecl::hasObjCGetterAndSetter() const {
   return true;
 }
 
-bool AbstractStorageDecl::requiresObjCGetterAndSetter() const {
+bool AbstractStorageDecl::requiresForeignGetterAndSetter() const {
   if (isFinal())
     return false;
-  if (!hasObjCGetterAndSetter())
+  if (hasAccessorFunctions() && getGetter()->isImportAsMember())
+    return true;
+  if (!hasForeignGetterAndSetter())
     return false;
   // Imported accessors are foreign and only have objc entry points.
   if (hasClangNode())
@@ -3381,8 +3419,7 @@ Identifier VarDecl::getObjCPropertyName() const {
   // name.
   ASTContext &ctx = getASTContext();
   StringRef nameStr = getName().str();
-  if (ctx.LangOpts.OmitNeedlessWords &&
-      camel_case::getFirstWord(nameStr) == "is") {
+  if (camel_case::getFirstWord(nameStr) == "is") {
     SmallString<16> scratch;
     return ctx.getIdentifier(camel_case::toLowercaseWord(nameStr.substr(2),
                                                          scratch));

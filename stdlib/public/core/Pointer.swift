@@ -55,7 +55,7 @@ func _convertMutableArrayToPointerArgument<
 
   // Call reserve to force contiguous storage.
   a.reserveCapacity(0)
-  _stdlibAssert(a._baseAddressIfContiguous != nil || a.isEmpty)
+  _debugPrecondition(a._baseAddressIfContiguous != nil || a.isEmpty)
 
   return (a._owner, ToPointer(a._baseAddressIfContiguous._rawValue))
 }
@@ -73,7 +73,6 @@ func _convertConstArrayToPointerArgument<
 }
 
 /// Derive a UTF-8 pointer argument from a value string parameter.
-@_transparent
 @warn_unused_result
 public // COMPILER_INTRINSIC
 func _convertConstStringToUTF8PointerArgument<

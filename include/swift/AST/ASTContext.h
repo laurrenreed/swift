@@ -420,6 +420,9 @@ public:
   /// Retrieve the declaration of Swift.OptionSet.
   NominalTypeDecl *getOptionSetDecl() const;
   
+  /// Retrieve the declaration of Swift.COpaquePointer.
+  NominalTypeDecl *getOpaquePointerDecl() const;
+  
   /// Retrieve the declaration of Swift.UnsafeMutablePointer<T>.
   NominalTypeDecl *getUnsafeMutablePointerDecl() const;
 
@@ -502,10 +505,21 @@ public:
   /// Retrieve a specific, known protocol.
   ProtocolDecl *getProtocol(KnownProtocolKind kind) const;
   
+  /// Determine whether the given nominal type is one of the standard
+  /// library types that is known a priori to be bridged to a
+  /// Foundation.
+  bool isStandardLibraryTypeBridgedInFoundation(NominalTypeDecl *nominal) const;
+
   /// Get the Objective-C type that a Swift type bridges to, if any.
   Optional<Type> getBridgedToObjC(const DeclContext *dc,
                                   Type type,
                                   LazyResolver *resolver) const;
+
+  /// Determine whether the given Swift type is representable in a
+  /// given foreign language.
+  std::pair<ForeignRepresentableKind, ProtocolConformance *>
+  getForeignRepresentable(NominalTypeDecl *nominal, ForeignLanguage language,
+                          DeclContext *dc);
 
   /// Add a declaration to a list of declarations that need to be emitted
   /// as part of the current module or source file, but are otherwise not

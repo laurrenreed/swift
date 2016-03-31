@@ -899,9 +899,14 @@ CodeCompletionResult *CodeCompletionResultBuilder::takeResult() {
       typeRelation =
           calculateMaxTypeRelationForDecl(AssociatedDecl, ExpectedDeclTypes);
 
+    if (typeRelation == CodeCompletionResult::Invalid) {
+      IsNotRecommended = true;
+      NotRecReason = CodeCompletionResult::NotRecommendedReason::TypeMismatch;
+    }
+
     return new (*Sink.Allocator) CodeCompletionResult(
         SemanticContext, NumBytesToErase, CCS, AssociatedDecl, ModuleName,
-        /*NotRecommended=*/IsNotRecommended,
+        /*NotRecommended=*/IsNotRecommended, NotRecReason,
         copyString(*Sink.Allocator, BriefComment),
         copyAssociatedUSRs(*Sink.Allocator, AssociatedDecl),
         copyStringPairArray(*Sink.Allocator, CommentWords), typeRelation);
@@ -1600,14 +1605,29 @@ public:
       Builder.setAssociatedDecl(MD);
       Builder.addTextChunk(MD->getNameStr());
       Builder.addTypeAnnotation("Module");
-      Builder.setNotRecommended(Pair.second);
+      if (Pair.second)
+        Builder.setNotRecommended(CodeCompletionResult::NotRecommendedReason::
+                                    Redundant);
     }
   }
 
-  bool isModuleLoaded(ASTContext &Ctx, clang::Module *M) {
-    return Ctx.getLoadedModule(llvm::makeArrayRef(
-      std::make_pair(Ctx.getIdentifier(M->getTopLevelModuleName()),
-                     SourceLoc())));
+  void collectImportedModules(llvm::StringSet<> &ImportedModules) {
+    SmallVector<Module::ImportedModule, 16> Imported;
+    SmallVector<Module::ImportedModule, 16> FurtherImported;
+    CurrDeclContext->getParentSourceFile()->getImportedModules(Imported,
+      Module::ImportFilter::All);
+    while(!Imported.empty()) {
+      ModuleDecl *MD = Imported.back().second;
+      Imported.pop_back();
+      if (!ImportedModules.insert(MD->getNameStr()).second)
+        continue;
+      FurtherImported.clear();
+      MD->getImportedModules(FurtherImported, Module::ImportFilter::Public);
+      Imported.append(FurtherImported.begin(), FurtherImported.end());
+      for (auto SubMod : FurtherImported) {
+        Imported.push_back(SubMod);
+      }
+    }
   }
 
   void addImportModuleNames() {
@@ -1619,6 +1639,8 @@ public:
                 return LHS->getTopLevelModuleName().compare_lower(
                   RHS->getTopLevelModuleName()) < 0;
               });
+    llvm::StringSet<> ImportedModules;
+    collectImportedModules(ImportedModules);
     for (auto *M : Modules) {
       if (M->isAvailable() &&
           !M->getTopLevelModuleName().startswith("_") &&
@@ -1636,8 +1658,9 @@ public:
         Builder.addTypeAnnotation("Module");
 
         // Imported modules are not recommended.
-        Builder.setNotRecommended(isModuleLoaded(CurrDeclContext->
-          getASTContext(), M));
+        if (ImportedModules.count(MD->getNameStr()) != 0)
+          Builder.setNotRecommended(CodeCompletionResult::NotRecommendedReason::
+                                      Redundant);
       }
     }
   }
@@ -2492,7 +2515,7 @@ public:
           addCompoundFunctionName(CD, Reason);
           return;
         }
-        
+
         if (auto MT = ExprType->getRValueType()->getAs<AnyMetatypeType>()) {
           if (HaveDot) {
             Type Ty;
@@ -3087,7 +3110,7 @@ public:
     }
 
     if (leadingSequence.empty() && LHS->getType() &&
-        LHS->getType()->isAssignableType()) {
+        LHS->getType()->isLValueType()) {
       addAssignmentOperator(LHS->getType()->getRValueType(),
                             CurrDeclContext->getASTContext().TheEmptyTupleType);
     }
@@ -3699,7 +3722,8 @@ public:
   }
 
   void addValueOverride(const ValueDecl *VD, DeclVisibilityKind Reason,
-                        CodeCompletionResultBuilder &Builder) {
+                        CodeCompletionResultBuilder &Builder,
+                        StringRef DeclIntroducer = "") {
 
     class DeclNameOffsetLocatorPrinter : public StreamPrinter {
     public:
@@ -3751,8 +3775,12 @@ public:
     if (missingDeclIntroducer && missingOverride)
       Builder.addOverrideKeyword();
 
-    if (missingDeclIntroducer)
-      Builder.addDeclIntroducer(DeclStr.str().substr(0, NameOffset));
+    if (missingDeclIntroducer) {
+      if (DeclIntroducer.empty())
+        Builder.addDeclIntroducer(DeclStr.str().substr(0, NameOffset));
+      else
+        Builder.addDeclIntroducer(DeclIntroducer);
+    }
 
     Builder.addTextChunk(DeclStr.str().substr(NameOffset));
   }
@@ -3772,6 +3800,16 @@ public:
         SemanticContextKind::Super, {});
     Builder.setAssociatedDecl(VD);
     addValueOverride(VD, Reason, Builder);
+  }
+
+  void addTypeAlias(const AssociatedTypeDecl *ATD, DeclVisibilityKind Reason) {
+    CodeCompletionResultBuilder Builder(Sink,
+      CodeCompletionResult::ResultKind::Declaration,
+      SemanticContextKind::Super, {});
+    Builder.setAssociatedDecl(ATD);
+    addValueOverride(ATD, Reason, Builder, "typealias ");
+    Builder.addTextChunk(" = ");
+    Builder.addSimpleNamedParameter("Type");
   }
 
   void addConstructor(const ConstructorDecl *CD) {
@@ -3794,10 +3832,17 @@ public:
     Builder.addBraceStmtWithCursor();
   }
 
+  llvm::StringSet<> SatisfiedAssociatedTypes;
+
   // Implement swift::VisibleDeclConsumer.
   void foundDecl(ValueDecl *D, DeclVisibilityKind Reason) override {
-    if (Reason == DeclVisibilityKind::MemberOfCurrentNominal)
+    if (Reason == DeclVisibilityKind::MemberOfCurrentNominal) {
+      if (D->getKind() == DeclKind::TypeAlias) {
+        ValueDecl *VD = dyn_cast<ValueDecl>(D);
+        SatisfiedAssociatedTypes.insert(VD->getName().str());
+      }
       return;
+    }
 
     if (AvailableAttr::isUnavailable(D))
       return;
@@ -3863,6 +3908,33 @@ public:
     }
   }
 
+  void addAssociatedTypes(Type CurrTy) {
+    if (hasFuncIntroducer || hasVarIntroducer || isKeywordSpecified("override"))
+      return;
+
+    assert(CurrTy);
+    NominalTypeDecl *NTD = dyn_cast_or_null<NominalTypeDecl>(CurrTy->
+                                                              getAnyNominal());
+
+    for (auto Conformance : NTD->getAllConformances()) {
+      auto Proto = Conformance->getProtocol();
+      if (!Proto->isAccessibleFrom(CurrDeclContext))
+        continue;
+      auto NormalConformance = Conformance->getRootNormalConformance();
+      for (auto Member : Proto->getMembers()) {
+        auto *ATD = dyn_cast<AssociatedTypeDecl>(Member);
+        if (!ATD)
+          continue;
+        // FIXME: Also exclude the type alias that has already been specified.
+        if (!NormalConformance->hasTypeWitness(ATD) ||
+            !ATD->getDefaultDefinitionLoc().isNull())
+          continue;
+        addTypeAlias(ATD,
+          DeclVisibilityKind::MemberOfProtocolImplementedByCurrentNominal);
+      }
+    }
+  }
+
   void getOverrideCompletions(SourceLoc Loc) {
     if (!CurrDeclContext->getAsGenericTypeOrGenericTypeExtensionContext())
       return;
@@ -3871,6 +3943,7 @@ public:
       lookupVisibleMemberDecls(*this, CurrTy, CurrDeclContext,
                                TypeResolver.get());
       addDesignatedInitializers(CurrTy);
+      addAssociatedTypes(CurrTy);
     }
   }
 };

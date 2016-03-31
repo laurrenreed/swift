@@ -27,7 +27,7 @@ var UnmanagedTests = TestSuite("Unmanaged")
 UnmanagedTests.test("fromOpaque()/trap")
   .skip(.custom(
     { !_isDebugAssertConfiguration() },
-    reason: "init(bitPattern:) does a _stdlibAssert() for null pointers"))
+    reason: "init(bitPattern:) does a _debugPrecondition() for null pointers"))
   .code {
   let null: OpaquePointer = getPointer(nil)
   expectCrashLater()
@@ -45,6 +45,23 @@ UnmanagedTests.test("unsafeBitCast(Unmanaged, Int)") {
       Unmanaged.passUnretained(ref) as Unmanaged<AnyObject>,
       to: Int.self))
   _fixLifetime(ref)
+}
+
+class Foobar {
+  func foo() -> Int { return 1 }
+}
+
+UnmanagedTests.test("_withUnsafeGuaranteedRef") {
+  var ref = Foobar()
+  var unmanaged = Unmanaged.passUnretained(ref)
+  withExtendedLifetime(ref) {
+    unmanaged._withUnsafeGuaranteedRef {
+      expectTrue(ref === $0)
+    }
+    unmanaged._withUnsafeGuaranteedRef {
+      expectEqual(1, $0.foo())
+    }
+  }
 }
 
 runAllTests()

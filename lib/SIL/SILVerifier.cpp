@@ -902,26 +902,20 @@ public:
       verifyLLVMIntrinsic(BI, BI->getIntrinsicInfo().ID);
   }
   
-  bool isValidLinkageForFragileRef(SILLinkage linkage) {
-    switch (linkage) {
-    case SILLinkage::Private:
-    case SILLinkage::PrivateExternal:
-    case SILLinkage::Hidden:
-    case SILLinkage::HiddenExternal:
+  /// Returns true if \p FRI is only used as a callee and will always be
+  /// inlined at those call sites.
+  static bool isAlwaysInlined(FunctionRefInst *FRI) {
+    if (FRI->getReferencedFunction()->getInlineStrategy() != AlwaysInline &&
+        !FRI->getReferencedFunction()->isTransparent()) {
       return false;
-
-    case SILLinkage::Shared:
-    case SILLinkage::SharedExternal:
-        // This handles some kind of generated functions, like constructors
-        // of clang imported types.
-        // TODO: check why those functions are not fragile anyway and make
-        // a less conservative check here.
-        return true;
-
-    case SILLinkage::Public:
-    case SILLinkage::PublicExternal:
-      return true;
     }
+
+    for (auto use : FRI->getUses()) {
+      auto site = FullApplySite::isa(use->getUser());
+      if (!site || site.getCallee() != FRI)
+        return false;
+    }
+    return true;
   }
 
   void checkFunctionRefInst(FunctionRefInst *FRI) {
@@ -931,9 +925,8 @@ public:
             "function_ref should have a context-free function result");
     if (F.isFragile()) {
       SILFunction *RefF = FRI->getReferencedFunction();
-      require(RefF->isFragile()
-                || isValidLinkageForFragileRef(RefF->getLinkage())
-                || RefF->isExternalDeclaration(),
+      require(isAlwaysInlined(FRI)
+                || RefF->hasValidLinkageForFragileRef(),
               "function_ref inside fragile function cannot "
               "reference a private or hidden symbol");
     }
@@ -944,7 +937,7 @@ public:
     if (F.isFragile()) {
       SILGlobalVariable *RefG = AGI->getReferencedGlobal();
       require(RefG->isFragile()
-                || isValidLinkageForFragileRef(RefG->getLinkage()),
+                || hasPublicVisibility(RefG->getLinkage()),
               "alloc_global inside fragile function cannot "
               "reference a private or hidden symbol");
     }
@@ -960,7 +953,7 @@ public:
     if (F.isFragile()) {
       SILGlobalVariable *RefG = GAI->getReferencedGlobal();
       require(RefG->isFragile()
-                || isValidLinkageForFragileRef(RefG->getLinkage()),
+                || hasPublicVisibility(RefG->getLinkage()),
               "global_addr inside fragile function cannot "
               "reference a private or hidden symbol");
     }
@@ -3207,6 +3200,8 @@ void SILWitnessTable::verify(const SILModule &M) const {
     assert(getEntries().size() == 0 &&
            "A witness table declaration should not have any entries.");
 
+  auto *protocol = getConformance()->getProtocol();
+
   // Currently all witness tables have public conformances, thus witness tables
   // should not reference SILFunctions without public/public_external linkage.
   // FIXME: Once we support private conformances, update this.
@@ -3216,6 +3211,16 @@ void SILWitnessTable::verify(const SILModule &M) const {
       if (F) {
         assert(!isLessVisibleThan(F->getLinkage(), getLinkage()) &&
                "Witness tables should not reference less visible functions.");
+        assert(F->getLoweredFunctionType()->getRepresentation() ==
+               SILFunctionTypeRepresentation::WitnessMethod &&
+               "Witnesses must have witness_method representation.");
+        auto *witnessSelfProtocol = F->getLoweredFunctionType()
+            ->getDefaultWitnessMethodProtocol(*M.getSwiftModule());
+        assert((witnessSelfProtocol == nullptr ||
+                witnessSelfProtocol == protocol) &&
+               "Witnesses must either have a concrete Self, or an "
+               "an abstract Self that is constrained to their "
+               "protocol.");
       }
     }
 #endif
@@ -3224,29 +3229,22 @@ void SILWitnessTable::verify(const SILModule &M) const {
 /// Verify that a default witness table follows invariants.
 void SILDefaultWitnessTable::verify(const SILModule &M) const {
 #ifndef NDEBUG
-  assert(!isDeclaration() &&
-         "Default witness table declarations should not exist.");
-  assert(!getProtocol()->hasFixedLayout() &&
-         "Default witness table declarations for fixed-layout protocols should "
-         "not exist.");
-  assert(getProtocol()->getParentModule() == M.getSwiftModule() &&
-         "Default witness table declarations must appear in the same "
-         "module as their protocol.");
-
-  // All default witness tables have public conformances, thus default
-  // witness tables should not reference SILFunctions without
-  // public/public_external linkage.
   for (const Entry &E : getEntries()) {
     if (!E.isValid())
       continue;
 
     SILFunction *F = E.getWitness();
-    assert(!isLessVisibleThan(F->getLinkage(), SILLinkage::Public) &&
-           "Default witness tables should not reference internal "
-           "or private functions.");
+    assert(!isLessVisibleThan(F->getLinkage(), getLinkage()) &&
+           "Default witness tables should not reference "
+           "less visible functions.");
     assert(F->getLoweredFunctionType()->getRepresentation() ==
            SILFunctionTypeRepresentation::WitnessMethod &&
            "Default witnesses must have witness_method representation.");
+    auto *witnessSelfProtocol = F->getLoweredFunctionType()
+        ->getDefaultWitnessMethodProtocol(*M.getSwiftModule());
+    assert(witnessSelfProtocol == getProtocol() &&
+           "Default witnesses must have an abstract Self parameter "
+           "constrained to their protocol.");
   }
 #endif
 }

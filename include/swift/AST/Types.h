@@ -76,7 +76,6 @@ namespace swift {
 #include "swift/AST/TypeNodes.def"
   };
 
-
 /// Various properties of types that are primarily defined recursively
 /// on structural types.
 class RecursiveTypeProperties {
@@ -693,6 +692,31 @@ public:
   /// unbound generic nominal type, return the (possibly generic) nominal type
   /// declaration.
   NominalTypeDecl *getAnyNominal();
+
+  /// Determine whether the given type is representable in the given
+  /// foreign language.
+  std::pair<ForeignRepresentableKind, ProtocolConformance *>
+  getForeignRepresentableIn(ForeignLanguage language, DeclContext *dc);
+
+  /// Determines whether the given Swift type is representable within
+  /// the given foreign language.
+  ///
+  /// A given Swift type is representable in the given foreign
+  /// language if the Swift type can be used from source code written
+  /// in that language.
+  bool isRepresentableIn(ForeignLanguage language, DeclContext *dc);
+
+  /// Determines whether the type is trivially representable within
+  /// the foreign language, meaning that it is both representable in
+  /// that language and that the runtime representations are
+  /// equivalent.
+  bool isTriviallyRepresentableIn(ForeignLanguage language,
+                                  DeclContext *dc);
+
+  /// \brief Given that this is a nominal type or bound generic nominal
+  /// type, return its parent type; this will be a null type if the type
+  /// is not a nested type.
+  Type getNominalParent();
 
   /// \brief If this is a GenericType, bound generic nominal type, or
   /// unbound generic nominal type, return the (possibly generic) nominal type
@@ -4316,6 +4340,14 @@ inline NominalTypeDecl *TypeBase::getAnyNominal() {
   return getCanonicalType().getAnyNominal();
 }
 
+inline Type TypeBase::getNominalParent() {
+  if (auto classType = getAs<NominalType>()) {
+    return classType->getParent();
+  } else {
+    return castTo<BoundGenericType>()->getParent();
+  }
+}
+
 inline GenericTypeDecl *TypeBase::getAnyGeneric() {
   return getCanonicalType().getAnyGeneric();
 }
@@ -4383,6 +4415,14 @@ inline CanType CanType::getLValueOrInOutObjectTypeImpl(CanType type) {
   if (auto refType = dyn_cast<LValueType>(type))
     return refType.getObjectType();
   return type;
+}
+
+inline CanType CanType::getNominalParent() const {
+  if (auto classType = dyn_cast<NominalType>(*this)) {
+    return classType.getParent();
+  } else {
+    return cast<BoundGenericType>(*this).getParent();
+  }
 }
 
 inline bool TypeBase::mayHaveSuperclass() {

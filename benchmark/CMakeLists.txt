@@ -16,6 +16,8 @@ include(AddSwiftBenchmarkSuite)
 
 set(SWIFT_BENCH_MODULES
     single-source/unit-tests/ObjectiveCBridging
+    single-source/unit-tests/ObjectiveCBridgingStubs
+    single-source/unit-tests/ObjectiveCNoBridgingStubs
     single-source/unit-tests/StackPromo
     single-source/Ackermann
     single-source/AngryPhonebook

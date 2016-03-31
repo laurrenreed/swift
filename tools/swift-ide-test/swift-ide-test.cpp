@@ -38,6 +38,7 @@
 #include "swift/IDE/SourceEntityWalker.h"
 #include "swift/IDE/SyntaxModel.h"
 #include "swift/IDE/Utils.h"
+#include "swift/Sema/IDETypeChecking.h"
 #include "swift/Markup/Markup.h"
 #include "swift/Config.h"
 #include "clang/APINotes/APINotesReader.h"
@@ -209,6 +210,9 @@ Action(llvm::cl::desc("Mode:"), llvm::cl::init(ActionType::None),
 static llvm::cl::opt<std::string>
 SourceFilename("source-filename", llvm::cl::desc("Name of the source file"));
 
+static llvm::cl::opt<std::string>
+SecondSourceFilename("second-source-filename", llvm::cl::desc("Name of the second source file"));
+
 static llvm::cl::list<std::string>
 InputFilenames(llvm::cl::Positional, llvm::cl::desc("[input files...]"),
                llvm::cl::ZeroOrMore);
@@ -287,25 +291,13 @@ ObjCForwardDeclarations("enable-objc-forward-declarations",
     llvm::cl::init(false));
 
 static llvm::cl::opt<bool>
-InferDefaultArguments(
-  "enable-infer-default-arguments",
-  llvm::cl::desc("Infer default arguments for imported parameters"),
-  llvm::cl::init(false));
-
-static llvm::cl::opt<bool>
-UseSwiftLookupTables(
-  "enable-swift-name-lookup-tables",
-  llvm::cl::desc("Use Swift-specific name lookup tables in the importer"),
-  llvm::cl::init(false));
-
-static llvm::cl::opt<bool>
 Swift3Migration("swift3-migration",
                    llvm::cl::desc("Enable Fix-It based migration aids for Swift 3"),
                    llvm::cl::init(false));
 
 static llvm::cl::opt<bool>
-OmitNeedlessWords("enable-omit-needless-words",
-                   llvm::cl::desc("Omit needless words when importing Objective-C names"),
+InferImportAsMember("enable-infer-import-as-member",
+                   llvm::cl::desc("Infer when a global could be imported as a member"),
                    llvm::cl::init(false));
 
 static llvm::cl::opt<bool>
@@ -527,6 +519,11 @@ HeaderToPrint("header-to-print",
 
 static llvm::cl::opt<std::string>
 LineColumnPair("pos", llvm::cl::desc("Line:Column pair"));
+
+static llvm::cl::opt<bool>
+NoEmptyLineBetweenMembers("no-empty-line-between-members",
+                          llvm::cl::desc("Print no empty line between members."),
+                          llvm::cl::init(false));
 } // namespace options
 
 static std::unique_ptr<llvm::MemoryBuffer>
@@ -544,6 +541,7 @@ removeCodeCompletionTokens(llvm::MemoryBuffer *Input,
 
 static int doCodeCompletion(const CompilerInvocation &InitInvok,
                             StringRef SourceFilename,
+                            StringRef SecondSourceFileName,
                             StringRef CodeCompletionToken,
                             bool CodeCompletionDiagnostics,
                             bool CodeCompletionKeywords) {
@@ -574,6 +572,7 @@ static int doCodeCompletion(const CompilerInvocation &InitInvok,
   CompilerInvocation Invocation(InitInvok);
   Invocation.setCodeCompletionPoint(CleanFile.get(), CodeCompletionOffset);
 
+
   std::unique_ptr<ide::OnDiskCodeCompletionCache> OnDiskCache;
   if (!options::CompletionCachePath.empty()) {
     OnDiskCache = llvm::make_unique<ide::OnDiskCodeCompletionCache>(
@@ -594,7 +593,9 @@ static int doCodeCompletion(const CompilerInvocation &InitInvok,
                                               *Consumer.get()));
 
   Invocation.setCodeCompletionFactory(CompletionCallbacksFactory.get());
-
+  if (!SecondSourceFileName.empty()) {
+    Invocation.addInputFilename(SecondSourceFileName);
+  }
   CompilerInstance CI;
 
   PrintingDiagnosticConsumer PrintDiags;
@@ -862,9 +863,6 @@ static int doDumpImporterLookupTables(const CompilerInvocation &InitInvok,
 
   CompilerInvocation Invocation(InitInvok);
   Invocation.addInputFilename(SourceFilename);
-
-  // We must use the Swift lookup tables.
-  Invocation.getClangImporterOptions().UseSwiftLookupTables = true;
 
   CompilerInstance CI;
 
@@ -1577,11 +1575,29 @@ static int doPrintLocalTypes(const CompilerInvocation &InitInvok,
 
 namespace {
 class AnnotatingPrinter : public StreamPrinter {
+  llvm::SmallDenseMap<ValueDecl*, ValueDecl*> DefaultImplementationMap;
+  bool InProtocol = false;
 public:
   using StreamPrinter::StreamPrinter;
 
-  void printDeclPre(const Decl *D) override {
-    OS << "<decl:" << Decl::getKindName(D->getKind()) << '>';
+  void printDeclPre(const Decl *D, Optional<BracketOptions> Bracket) override {
+    StringRef HasDefault = "";
+    if (D->getKind() == DeclKind::Protocol) {
+      InProtocol = true;
+      DefaultImplementationMap.clear();
+      ProtocolDecl *PD = const_cast<ProtocolDecl*>(dyn_cast<ProtocolDecl>(D));
+      collectDefaultImplementationForProtocolMembers(PD,
+                                                     DefaultImplementationMap);
+    }
+    if (InProtocol) {
+      if (auto *VD = const_cast<ValueDecl*>(dyn_cast<ValueDecl>(D))) {
+        for (auto Pair : DefaultImplementationMap) {
+          if (Pair.getSecond() == VD)
+             HasDefault = "(HasDefault)";
+        }
+      }
+    }
+    OS << "<decl:" << Decl::getKindName(D->getKind()) << HasDefault << '>';
   }
   void printDeclLoc(const Decl *D) override {
     OS << "<loc>";
@@ -1589,26 +1605,35 @@ public:
   void printDeclNameOrSignatureEndLoc(const Decl *D) override {
     OS << "</loc>";
   }
-  void printDeclPost(const Decl *D) override {
+  void printDeclPost(const Decl *D, Optional<BracketOptions> Bracket) override {
+    if (D->getKind() == DeclKind::Protocol) {
+      InProtocol = false;
+    }
     OS << "</decl>";
   }
   void printStructurePre(PrintStructureKind Kind, const Decl *D) override {
     if (D)
-      printDeclPre(D);
+      printDeclPre(D, None);
   }
   void printStructurePost(PrintStructureKind Kind, const Decl *D) override {
     if (D)
-      printDeclPost(D);
+      printDeclPost(D, None);
   }
 
 
   void printSynthesizedExtensionPre(const ExtensionDecl *ED,
-                                    const NominalTypeDecl *NTD) override {
+                                    const NominalTypeDecl *NTD,
+                                    Optional<BracketOptions> Bracket) override {
+    if (Bracket.hasValue() && !Bracket.getValue().shouldOpenExtension)
+      return;
     OS << "<synthesized>";
   }
 
   void printSynthesizedExtensionPost(const ExtensionDecl *ED,
-                                     const NominalTypeDecl *NTD) override {
+                                     const NominalTypeDecl *NTD,
+                                     Optional<BracketOptions> Bracket) override {
+    if (Bracket.hasValue() && !Bracket.getValue().shouldCloseExtension)
+      return;
     OS << "</synthesized>";
   }
 
@@ -2388,41 +2413,50 @@ private:
 class TypeReconstructWalker : public SourceEntityWalker {
   ASTContext &Ctx;
   llvm::raw_ostream &Stream;
+  llvm::DenseSet<ValueDecl *> SeenDecls;
 
 public:
   TypeReconstructWalker(ASTContext &Ctx, llvm::raw_ostream &Stream)
       : Ctx(Ctx), Stream(Stream) {}
 
   bool walkToDeclPre(Decl *D, CharSourceRange range) override {
-    if (auto *VD = dyn_cast<ValueDecl>(D))
-      tryDemangleDecl(VD, range);
+    if (auto *VD = dyn_cast<ValueDecl>(D)) {
+      if (SeenDecls.insert(VD).second)
+        tryDemangleDecl(VD, range, /*isRef=*/false);
+    }
     return true;
   }
 
   bool visitDeclReference(ValueDecl *D, CharSourceRange Range,
                           TypeDecl *CtorTyRef, Type T) override {
-    if (T.isNull())
-      return true;
-    T = T->getRValueType();
-    Mangle::Mangler Man(/* DWARFMangling */true);
-    Man.mangleTypeForDebugger(T, D->getDeclContext());
-    std::string MangledName(Man.finalize());
-    std::string Error;
-    Type ReconstructedType = getTypeFromMangledSymbolname(Ctx, MangledName,
-                                                        Error);
-    if (ReconstructedType) {
-      Stream << "reconstructed type from usr for '" << Range.str() << "' is '";
-      ReconstructedType->print(Stream);
-      Stream << "'\n";
-    } else {
-      Stream << "cannot reconstruct type from usr for '" << Range.str()
-             << "'\n";
+    if (SeenDecls.insert(D).second)
+      tryDemangleDecl(D, Range, /*isRef=*/true);
+
+    if (T) {
+      T = T->getRValueType();
+      tryDemangleType(T, D->getDeclContext(), Range);
     }
     return true;
   }
 
 private:
-  void tryDemangleDecl(ValueDecl *VD, CharSourceRange range) {
+  void tryDemangleType(Type T, const DeclContext *DC, CharSourceRange range) {
+    Mangle::Mangler Man(/* DWARFMangling */true);
+    Man.mangleTypeForDebugger(T, DC);
+    std::string mangledName(Man.finalize());
+    std::string Error;
+    Type ReconstructedType =
+        getTypeFromMangledSymbolname(Ctx, mangledName, Error);
+    Stream << "type: ";
+    if (ReconstructedType) {
+      ReconstructedType->print(Stream);
+    } else {
+      Stream << "FAILURE";
+    }
+    Stream << "\tfor '" << range.str() << "' mangled=" << mangledName << "\n";
+  }
+
+  void tryDemangleDecl(ValueDecl *VD, CharSourceRange range, bool isRef) {
     std::string USR;
     {
       llvm::raw_string_ostream OS(USR);
@@ -2430,14 +2464,18 @@ private:
     }
 
     std::string error;
-    if (Decl *reDecl = getDeclFromUSR(Ctx, USR, error)) {
-      Stream << "reconstructed decl from usr for '" << range.str() << "' is '";
-      reDecl->print(Stream, PrintOptions());
-      Stream << "'\n";
+    if (isRef) {
+      Stream << "dref: ";
     } else {
-      Stream << "cannot reconstruct decl from usr for '" << range.str()
-             << "'\n";
+      Stream << "decl: ";
     }
+
+    if (Decl *reDecl = getDeclFromUSR(Ctx, USR, error)) {
+      reDecl->print(Stream, PrintOptions());
+    } else {
+      Stream << "FAILURE";
+    }
+    Stream << "\tfor '" << range.str() << "' usr=" << USR << "\n";
   }
 };
 
@@ -2641,18 +2679,12 @@ int main(int argc, char *argv[]) {
   InitInvok.getLangOptions().CodeCompleteInitsInPostfixExpr |=
       options::CodeCompleteInitsInPostfixExpr;
   InitInvok.getLangOptions().Swift3Migration |= options::Swift3Migration;
-  InitInvok.getLangOptions().OmitNeedlessWords |=
-    options::OmitNeedlessWords;
-  InitInvok.getLangOptions().StripNSPrefix |= options::StripNSPrefix;
+  InitInvok.getLangOptions().InferImportAsMember |=
+    options::InferImportAsMember;  InitInvok.getLangOptions().StripNSPrefix |= options::StripNSPrefix;
   InitInvok.getClangImporterOptions().ImportForwardDeclarations |=
     options::ObjCForwardDeclarations;
-  InitInvok.getClangImporterOptions().OmitNeedlessWords |=
-    options::OmitNeedlessWords;
-  InitInvok.getClangImporterOptions().InferDefaultArguments |=
-    options::InferDefaultArguments;
-  InitInvok.getClangImporterOptions().UseSwiftLookupTables |=
-    options::UseSwiftLookupTables;
-
+  InitInvok.getClangImporterOptions().InferImportAsMember |=
+    options::InferImportAsMember;
   if (!options::ResourceDir.empty()) {
     InitInvok.setRuntimeResourcePath(options::ResourceDir);
   }
@@ -2719,9 +2751,6 @@ int main(int argc, char *argv[]) {
     InitInvok.getLangOptions().AttachCommentsToDecls = true;
   }
 
-  if (InitInvok.getClangImporterOptions().InferDefaultArguments)
-    PrintOpts.PrintDefaultParameterPlaceholder = true;
-
   int ExitCode;
 
   switch (options::Action) {
@@ -2740,6 +2769,7 @@ int main(int argc, char *argv[]) {
     }
     ExitCode = doCodeCompletion(InitInvok,
                                 options::SourceFilename,
+                                options::SecondSourceFilename,
                                 options::CodeCompletionToken,
                                 options::CodeCompletionDiagnostics,
                                 options::CodeCompletionKeywords);
@@ -2802,11 +2832,14 @@ int main(int argc, char *argv[]) {
 
     if (options::Action == ActionType::PrintModuleGroups)
       ExitCode = doPrintModuleGroups(InitInvok, options::ModuleToPrint);
-    else
+    else {
+      if (options::NoEmptyLineBetweenMembers.getNumOccurrences() > 0)
+        PrintOpts.EmptyLineBetweenMembers = !options::NoEmptyLineBetweenMembers;
       ExitCode = doPrintModules(
         InitInvok, options::ModuleToPrint, options::ModuleGroupToPrint,
         TraversalOptions, PrintOpts, options::AnnotatePrint,
         options::SynthesizeExtension);
+    }
     break;
   }
 

@@ -64,6 +64,8 @@ import NSStringConversion
 import NopDeinit
 import ObjectAllocation
 import ObjectiveCBridging
+import ObjectiveCBridgingStubs
+import ObjectiveCNoBridgingStubs
 import OpenClose
 import Phonebook
 import PolymorphicCalls
@@ -166,6 +168,11 @@ precommitTests = [
   "ObjectiveCBridgeFromNSSetAnyObjectToString": run_ObjectiveCBridgeFromNSSetAnyObjectToString,
   "ObjectiveCBridgeFromNSSetAnyObjectToStringForced": run_ObjectiveCBridgeFromNSSetAnyObjectToStringForced,
   "ObjectiveCBridgeToNSSet": run_ObjectiveCBridgeToNSSet,
+  "ObjectiveCBridgeStubFromNSString": run_ObjectiveCBridgeStubFromNSString,
+  "ObjectiveCBridgeStubToNSString": run_ObjectiveCBridgeStubToNSString,
+  "ObjectiveCBridgeStubFromArrayOfNSString": run_ObjectiveCBridgeStubFromArrayOfNSString,
+  "ObjectiveCBridgeStubToArrayOfNSString": run_ObjectiveCBridgeStubToArrayOfNSString,
+  "ObjectiveCBridgeStubFromNSStringRef": run_ObjectiveCBridgeStubFromNSStringRef,
   "OpenClose": run_OpenClose,
   "Phonebook": run_Phonebook,
   "PolymorphicCalls": run_PolymorphicCalls,
