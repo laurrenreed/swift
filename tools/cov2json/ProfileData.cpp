@@ -10,7 +10,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "ProfdataCompare.hpp"
+#include "ProfileData.hpp"
 #include "llvm/Support/CommandLine.h"
 
 using namespace llvm;
@@ -39,10 +39,9 @@ File::functionMap() {
   return _functionMap;
 }
 
-std::map<std::string, std::shared_ptr<File>>
-CoverageFilePair::fileMap(std::string coveredDir) {
+void CoverageFilePair::loadFileMap(std::vector<File> &files,
+                                   std::string coveredDir) {
   auto mapping = coverageMapping();
-  std::map<std::string, std::shared_ptr<File>> files;
   for (auto &filename : mapping->getUniqueSourceFiles()) {
     std::string truncatedFilename = filename;
     if (coveredDir != "") {
@@ -57,8 +56,7 @@ CoverageFilePair::fileMap(std::string coveredDir) {
     for (auto &func : mapping->getCoveredFunctions(filename)) {
       functions.emplace_back(func);
     }
-    files[filename] = std::make_shared<File>(truncatedFilename, functions);
+    files.emplace_back(File(truncatedFilename, functions));
   }
-  return files;
 }
 }

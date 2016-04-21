@@ -1,4 +1,4 @@
-//===--------- YAMLWriter.hpp - Tools for analyzing llvm profdata ---------===//
+//===----------- YAMLWriter.hpp - Serializes structures to JSON -----------===//
 //
 // This source file is part of the Swift.org open source project
 //
@@ -10,12 +10,11 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef YAMLWriter_hpp
-#define YAMLWriter_hpp
+#ifndef JSONWriter_hpp
+#define JSONWriter_hpp
 
-#include <stdio.h>
 #include "swift/Basic/JSONSerialization.h"
-#include "ProfdataCompare.hpp"
+#include "ProfileData.hpp"
 
 namespace swift {
 namespace json {
@@ -57,4 +56,5 @@ template <> struct ObjectTraits<cov2json::File> {
     
 }
 }
-#endif /* YAMLWriter_hpp */
+
+#endif /* JSONWriter_hpp */

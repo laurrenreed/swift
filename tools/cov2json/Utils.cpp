@@ -11,13 +11,10 @@
 //===----------------------------------------------------------------------===//
 
 #include "Utils.hpp"
-#include "llvm/Support/Path.h"
-#include "llvm/ADT/STLExtras.h"
-#include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Process.h"
 #include "llvm/Support/FormattedStream.h"
 #include "swift/Basic/Demangle.h"
-#include "ProfdataCompare.hpp"
+#include "ProfileData.hpp"
 #include <cxxabi.h>
 
 using namespace llvm;

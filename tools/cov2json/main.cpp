@@ -11,8 +11,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llvm/Support/CommandLine.h"
-#include "swift/Basic/JSONSerialization.h"
-#include "ProfdataCompare.hpp"
+#include "ProfileData.hpp"
 #include "JSONWriter.hpp"
 
 using namespace llvm;
@@ -30,15 +29,13 @@ int main(int argc, const char **argv) {
                               cl::Required);
   cl::opt<std::string> coveredDir("covered-dir", cl::Optional,
                                   cl::desc("Restrict output to a certain "
-                                           "covered subdirectory"));
+                                           "covered subdirectory."));
   cl::ParseCommandLineOptions(argc, argv);
   
   cov2json::CoverageFilePair filePair(file, binary);
-  auto map = filePair.fileMap(coveredDir);
   std::vector<cov2json::File> files;
-  for (auto &pair : map) {
-    files.emplace_back(*pair.second);
-  }
+  
+  filePair.loadFileMap(files, coveredDir);
   
   std::unique_ptr<raw_ostream> os = cov2json::streamForFile(output);
   

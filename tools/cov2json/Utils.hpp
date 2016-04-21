@@ -13,9 +13,7 @@
 #ifndef Utils_hpp
 #define Utils_hpp
 
-#include <stdio.h>
 #include <string>
-#include <vector>
 #include <system_error>
 #include "llvm/Support/raw_ostream.h"
 

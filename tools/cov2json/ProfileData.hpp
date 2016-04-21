@@ -1,4 +1,4 @@
-//===------ ProfdataCompare.hpp - Tools for analyzing llvm profdata -------===//
+//===----- ProfileData_hpp - Data structures for serializing profdata -----===//
 //
 // This source file is part of the Swift.org open source project
 //
@@ -10,8 +10,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef ProfdataCompare_hpp
-#define ProfdataCompare_hpp
+#ifndef ProfileData_hpp
+#define ProfileData_hpp
 
 #include <stdio.h>
 #include <iostream>
@@ -123,9 +123,8 @@ public:
   /// to the binary and profdata.
   std::unique_ptr<llvm::coverage::CoverageMapping> coverageMapping();
 
-  /// \returns A map of filenames to File
-  /// objects that are covered in this profdata.
-  std::map<std::string, std::shared_ptr<File>> fileMap(std::string coveredDir);
+  /// Loads a vector of File objects that are covered in this profdata.
+  void loadFileMap(std::vector<File> &files, std::string coveredDir);
 
   CoverageFilePair(std::string filename, std::string binary)
       : filename(filename), binary(binary) {}
@@ -135,4 +134,4 @@ int jsonMain(int argc, const char *argv[]);
 
 } // namespace cov2json;
 
-#endif /* ProfdataCompare_hpp */
+#endif /* ProfileData_hpp */
