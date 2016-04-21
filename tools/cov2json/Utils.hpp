@@ -19,7 +19,7 @@
 #include <system_error>
 #include "llvm/Support/raw_ostream.h"
 
-namespace covcompare {
+namespace cov2json {
 std::string extractSymbol(std::string symbol);
 
 /// Attempts to demangle a C++ symbol, returning

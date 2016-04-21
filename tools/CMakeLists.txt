@@ -5,10 +5,7 @@ add_subdirectory(swift-demangle)
 add_subdirectory(lldb-moduleimport-test)
 add_subdirectory(sil-extract)
 add_subdirectory(swift-llvm-opt)
-
-if(SWIFT_ANALYZE_CODE_COVERAGE)
-  add_subdirectory(cov-compare)
-endif()
+add_subdirectory(cov2json)
 
 if(SWIFT_BUILD_SOURCEKIT)
   add_subdirectory(SourceKit)

@@ -22,7 +22,7 @@
 
 using namespace llvm;
 
-namespace covcompare {
+namespace cov2json {
 void withColor(raw_ostream::Colors color, bool bold, bool bg,
                std::function<void()> f) {
   bool colored = sys::Process::StandardErrHasColors();
@@ -31,12 +31,6 @@ void withColor(raw_ostream::Colors color, bool bold, bool bg,
   f();
   if (colored)
     ferrs().resetColor();
-}
-
-void warn(std::string Text) {
-  withColor(raw_ostream::MAGENTA, /*bold=*/true, /*bg=*/false,
-            [] { ferrs() << "warning: "; });
-  ferrs() << Text << "\n";
 }
 
 std::string extractSymbol(std::string name) {

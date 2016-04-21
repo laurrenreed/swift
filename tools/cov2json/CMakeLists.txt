@@ -1,8 +1,6 @@
 add_swift_executable(cov-compare
   ProfdataCompare.cpp
-  HTMLWriter.cpp
-  MarkdownWriter.cpp
-  YAMLWriter.cpp
+  JSONWriter.cpp
   Utils.cpp
   main.cpp
   LINK_LIBRARIES swiftBasic

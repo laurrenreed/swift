@@ -10,5 +10,5 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "YAMLWriter.hpp"
+#include "JSONWriter.hpp"
 #include "ProfdataCompare.hpp"
