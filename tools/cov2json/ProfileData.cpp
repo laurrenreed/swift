@@ -1,4 +1,4 @@
-//===------ ProfdataCompare.cpp - Tools for comparing llvm profdata -------===//
+//===--------- ProfileData.cpp - Tools for loading llvm profdata -----------===//
 //
 // This source file is part of the Swift.org open source project
 //
@@ -52,7 +52,7 @@ StringRef extractSymbol(StringRef name) {
 
 /// Returns the demangled (Swift or C++) version of `symbol`
 /// into the `out` buffer.
-void getDemangled(StringRef symbol, StringRef &out) {
+void getDemangled(std::string symbol, std::string &out) {
   auto prefix = symbol.substr(0, 2);
   if (prefix == "_Z") {
     auto demangled = abi::__cxa_demangle(symbol.data(), 0, 0, NULL);

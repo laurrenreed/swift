@@ -1,4 +1,4 @@
-//===----- ProfileData_hpp - Data structures for serializing profdata -----===//
+//===----- ProfileData.hpp - Data structures for serializing profdata -----===//
 //
 // This source file is part of the Swift.org open source project
 //
@@ -45,7 +45,7 @@ public:
 
 struct Function {
 public:
-  StringRef name;
+  std::string name;
   std::vector<Region> regions;
   uint64_t executionCount;
   Function(StringRef name, std::vector<Region> regions,
@@ -68,7 +68,7 @@ public:
 /// A struct that stores all functions associated with a given source file.
 struct File {
 public:
-  StringRef name;
+  std::string name;
   std::vector<Function> functions;
 
   File(StringRef name, std::vector<Function> functions)

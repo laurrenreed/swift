@@ -1,4 +1,4 @@
-//===--------=- main.cpp - Tools for analyzing llvm profdata --------------===//
+//===---------- main.cpp - Tools for analyzing llvm profdata --------------===//
 //
 // This source file is part of the Swift.org open source project
 //

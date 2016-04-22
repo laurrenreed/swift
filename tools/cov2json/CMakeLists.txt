@@ -1,5 +1,5 @@
-add_swift_executable(cov-compare
-  ProfdataCompare.cpp
+add_swift_executable(cov2json
+  ProfileData.cpp
   main.cpp
   LINK_LIBRARIES swiftBasic
   COMPONENT_DEPENDS support object profiledata "option" core)
