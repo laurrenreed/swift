@@ -29,8 +29,8 @@ template <typename U> struct ArrayTraits<std::vector<U>> {
   }
 };
 
-template <> struct ObjectTraits<cov2json::Region> {
-  static void mapping(Output &out, cov2json::Region &region) {
+template <> struct ObjectTraits<llvm::cov2json::Region> {
+  static void mapping(Output &out, llvm::cov2json::Region &region) {
     out.mapRequired("column-start", region.columnStart);
     out.mapRequired("column-end", region.columnEnd);
     out.mapRequired("line-start", region.lineStart);
@@ -39,16 +39,16 @@ template <> struct ObjectTraits<cov2json::Region> {
   }
 };
 
-template <> struct ObjectTraits<cov2json::Function> {
-  static void mapping(Output &out, cov2json::Function &function) {
+template <> struct ObjectTraits<llvm::cov2json::Function> {
+  static void mapping(Output &out, llvm::cov2json::Function &function) {
     out.mapRequired("name", function.name);
     out.mapRequired("regions", function.regions);
     out.mapRequired("count", function.executionCount);
   }
 };
 
-template <> struct ObjectTraits<cov2json::File> {
-  static void mapping(Output &out, cov2json::File &file) {
+template <> struct ObjectTraits<llvm::cov2json::File> {
+  static void mapping(Output &out, llvm::cov2json::File &file) {
     out.mapRequired("filename", file.name);
     out.mapRequired("functions", file.functions);
   }

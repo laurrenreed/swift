@@ -34,24 +34,24 @@ sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 from SwiftBuildSupport import WorkingDirectory, check_call
 
 def cleanup(config):
-    if not config.swift_bin_path and config.cov_compare_path:
+    if not config.swift_bin_path and config.cov2json_path:
         return
-    yaml_path = os.path.join("coverage.yaml")
-    cov_compare_cmd = ("%s yaml \"%s\" \"%s\" -o \"%s\"" %
-        (config.cov_compare_path,
-         config.final_profdata_path,
-         config.swift_bin_path,
-         yaml_path)
-    )
-    result = subprocess.call(cov_compare_cmd, shell=True)
+    json_path = "coverage.json"
+    cov2json_cmd = [
+        config.cov2json_path,
+        config.final_profdata_path,
+        config.swift_bin_path,
+        json_path
+    ]
+    result = subprocess.call(cov2json_cmd)
     if result != 0:
         return
     tarfile_name = os.path.join(config.out_dir, 'coverage.tar.gz')
     logging.info("creating tar file at %s..." % tarfile_name)
     tf = tarfile.open(tarfile_name, mode='w:gz', compresslevel=9)
-    logging.info("adding yaml file at %s..."
-                 % yaml_path)
-    tf.add('coverage.yaml')
+    logging.info("adding json file at %s..."
+                 % json_path)
+    tf.add('coverage.json')
     logging.info("writing tarfile...")
     tf.close()
 

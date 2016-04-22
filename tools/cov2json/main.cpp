@@ -15,9 +15,7 @@
 #include "JSONWriter.hpp"
 
 using namespace llvm;
-using namespace coverage;
-
-typedef std::function<int(int, const char **)> MainFunction;
+using namespace cov2json;
 
 int main(int argc, const char **argv) {
   cl::opt<std::string> output("output", cl::desc("<output filename>"),
@@ -29,15 +27,15 @@ int main(int argc, const char **argv) {
                               cl::Required);
   cl::opt<std::string> coveredDir("covered-dir", cl::Optional,
                                   cl::desc("Restrict output to a certain "
-                                           "covered subdirectory."));
+                                         "covered subdirectory."));
   cl::ParseCommandLineOptions(argc, argv);
   
-  cov2json::CoverageFilePair filePair(file, binary);
-  std::vector<cov2json::File> files;
+  CoverageFilePair filePair(file, binary);
+  std::vector<File> files;
   
   filePair.loadFileMap(files, coveredDir);
   
-  std::unique_ptr<raw_ostream> os = cov2json::streamForFile(output);
+  std::unique_ptr<raw_ostream> os = streamForFile(output);
   
   swift::json::Output jout(*os, false);
   jout << files;

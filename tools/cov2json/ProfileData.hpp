@@ -16,17 +16,16 @@
 #include <stdio.h>
 #include <iostream>
 #include "llvm/ProfileData/InstrProfReader.h"
+#include "llvm/ProfileData/CoverageMapping.h"
 #include "llvm/ProfileData/CoverageMappingReader.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/FormattedStream.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/Path.h"
-#include "Utils.hpp"
 #include <map>
 #include <set>
 
-using namespace llvm;
-
+namespace llvm {
 namespace cov2json {
 
 struct Region {
@@ -46,27 +45,14 @@ public:
 
 struct Function {
 public:
-  std::string name;
+  StringRef name;
   std::vector<Region> regions;
   uint64_t executionCount;
-  Function(std::string name, std::vector<Region> regions,
+  Function(StringRef name, std::vector<Region> regions,
            uint64_t executionCount)
       : name(name), regions(regions), executionCount(executionCount) {}
 
-  Function(llvm::coverage::FunctionRecord record) {
-    name = extractSymbol(record.Name);
-    for (auto &region : record.CountedRegions) {
-      if (region.FileID != region.ExpandedFileID)
-        continue;
-      if (region.Kind !=
-          llvm::coverage::CounterMappingRegion::RegionKind::CodeRegion)
-        continue;
-      Region r(region.ColumnStart, region.ColumnEnd, region.LineStart,
-               region.LineEnd, region.ExecutionCount);
-      regions.emplace_back(r);
-    }
-    executionCount = record.ExecutionCount;
-  }
+  Function(const llvm::coverage::FunctionRecord &record);
 
   Function(const Function &copy)
       : name(copy.name), regions(copy.regions),
@@ -81,29 +67,18 @@ public:
 
 /// A struct that stores all functions associated with a given source file.
 struct File {
-
-  std::shared_ptr<std::map<std::string, std::shared_ptr<Function>>>
-      _functionMap;
-
 public:
-  std::string name;
+  StringRef name;
   std::vector<Function> functions;
 
-  /// \returns A map of function symbols to the
-  /// corresponding Functions.
-  std::shared_ptr<std::map<std::string, std::shared_ptr<Function>>>
-  functionMap();
-
-  File(std::string name, std::vector<Function> functions)
+  File(StringRef name, std::vector<Function> functions)
       : name(name), functions(functions) {}
 
   File(File &copy)
-      : _functionMap(copy._functionMap), name(copy.name),
-        functions(copy.functions) {}
+      : name(copy.name), functions(copy.functions) {}
 
   File(const File &copy)
-      : _functionMap(copy._functionMap), name(copy.name),
-        functions(copy.functions) {}
+      : name(copy.name), functions(copy.functions) {}
 
   File() {}
 };
@@ -114,24 +89,25 @@ public:
 struct CoverageFilePair {
 public:
   /// The .profdata file path.
-  std::string filename;
+  StringRef filename;
 
   /// The binary file path that generated the .profdata.
-  std::string binary;
+  StringRef binary;
 
   /// \returns A CoverageMapping object corresponding
   /// to the binary and profdata.
   std::unique_ptr<llvm::coverage::CoverageMapping> coverageMapping();
 
   /// Loads a vector of File objects that are covered in this profdata.
-  void loadFileMap(std::vector<File> &files, std::string coveredDir);
+  void loadFileMap(std::vector<File> &files, StringRef coveredDir);
 
-  CoverageFilePair(std::string filename, std::string binary)
+  CoverageFilePair(StringRef filename, StringRef binary)
       : filename(filename), binary(binary) {}
 };
 
-int jsonMain(int argc, const char *argv[]);
+std::unique_ptr<raw_ostream> streamForFile(StringRef file);
 
 } // namespace cov2json;
+} // namespace llvm;
 
 #endif /* ProfileData_hpp */

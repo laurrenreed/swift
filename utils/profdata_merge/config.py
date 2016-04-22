@@ -22,7 +22,7 @@ class Config(object):
     def __init__(self, out_dir, swift_dir, no_remove_files):
         self.out_dir = out_dir
         self.swift_bin_path = os.path.join(swift_dir, "swift")
-        self.cov_compare_path = os.path.join(swift_dir, "cov-compare")
+        self.cov2json_path = os.path.join(swift_dir, "cov2json")
         self.tmp_dir = tempfile.mkdtemp()
         self.pid_file_path = os.path.join(self.out_dir,
                                           "profdata_merge_worker.pid")
