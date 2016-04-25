@@ -27,13 +27,21 @@ int main(int argc, const char **argv) {
                               cl::Required);
   cl::opt<std::string> coveredDir("covered-dir", cl::Optional,
                                   cl::desc("Restrict output to a certain "
-                                         "covered subdirectory."));
+                                           "covered subdirectory."));
+  cl::list<std::string> coveredFiles("covered-files", cl::Optional,
+                                     cl::Positional,
+                                     cl::PositionalEatsArgs,
+                                     cl::desc("Restrict output to a certain "
+                                              "set of files within the "
+                                              "provided subdirectory"),
+                                     cl::ZeroOrMore);
+  
   cl::ParseCommandLineOptions(argc, argv);
   
   CoverageFilePair filePair(file, binary);
   std::vector<File> files;
   
-  filePair.loadFileMap(files, coveredDir);
+  filePair.loadFileMap(files, coveredDir, coveredFiles);
   
   std::unique_ptr<raw_ostream> os = streamForFile(output);
   

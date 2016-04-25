@@ -60,9 +60,11 @@ void getDemangled(std::string symbol, std::string &out) {
       std::string s(demangled);
       free(demangled);
       out = s;
+      return;
     }
   } else if (prefix == "_T") {
     out = swift::Demangle::demangleSymbolAsString(symbol);
+    return;
   }
   out = symbol;
 }
@@ -83,8 +85,10 @@ std::unique_ptr<raw_ostream> streamForFile(StringRef file) {
 
 /// Creates a Function struct off of a FunctionRecord.
 Function::Function(const coverage::FunctionRecord &record) {
-  auto symbol = extractSymbol(record.Name);
-  getDemangled(symbol, this->name);
+  this->symbol = extractSymbol(record.Name);
+  std::string demangled;
+  getDemangled(symbol, demangled);
+  this->name = demangled;
   for (auto &region : record.CountedRegions) {
     if (region.FileID != region.ExpandedFileID)
       continue;
@@ -113,7 +117,8 @@ CoverageFilePair::coverageMapping() {
 
 /// Loads a list of files that are within the provided coveredDir.
 void CoverageFilePair::loadFileMap(std::vector<File> &files,
-                                   StringRef coveredDir) {
+                                   StringRef coveredDir,
+                                   std::vector<std::string> &coveredFiles) {
   auto mapping = coverageMapping();
   for (auto &filename : mapping->getUniqueSourceFiles()) {
     StringRef truncatedFilename = filename;
@@ -124,7 +129,19 @@ void CoverageFilePair::loadFileMap(std::vector<File> &files,
       StringRef parentPath = sys::path::parent_path(coveredDir);
       truncatedFilename = filename.substr(parentPath.size(),
                                           filename.size() - parentPath.size());
+      truncatedFilename = sys::path::relative_path(truncatedFilename);
     }
+    if (!coveredFiles.empty()) {
+      bool found = false;
+      for (auto &file : coveredFiles) {
+        if (truncatedFilename.endswith(file)) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) continue;
+    }
+    llvm::dbgs() << "serializing " << truncatedFilename << "\n";
     std::vector<Function> functions;
     for (auto &func : mapping->getCoveredFunctions(filename)) {
       functions.emplace_back(func);

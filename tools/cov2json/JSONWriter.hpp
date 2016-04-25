@@ -42,6 +42,7 @@ template <> struct ObjectTraits<llvm::cov2json::Region> {
 template <> struct ObjectTraits<llvm::cov2json::Function> {
   static void mapping(Output &out, llvm::cov2json::Function &function) {
     out.mapRequired("name", function.name);
+    out.mapRequired("symbol", function.symbol);
     out.mapRequired("regions", function.regions);
     out.mapRequired("count", function.executionCount);
   }

@@ -46,6 +46,7 @@ public:
 struct Function {
 public:
   std::string name;
+  std::string symbol;
   std::vector<Region> regions;
   uint64_t executionCount;
   Function(StringRef name, std::vector<Region> regions,
@@ -55,11 +56,11 @@ public:
   Function(const llvm::coverage::FunctionRecord &record);
 
   Function(const Function &copy)
-      : name(copy.name), regions(copy.regions),
+      : symbol(copy.symbol), name(copy.name), regions(copy.regions),
         executionCount(copy.executionCount) {}
 
   Function(Function &copy)
-      : name(copy.name), regions(copy.regions),
+      : symbol(copy.symbol), name(copy.name), regions(copy.regions),
         executionCount(copy.executionCount) {}
 
   Function() {}
@@ -99,7 +100,8 @@ public:
   std::unique_ptr<llvm::coverage::CoverageMapping> coverageMapping();
 
   /// Loads a vector of File objects that are covered in this profdata.
-  void loadFileMap(std::vector<File> &files, StringRef coveredDir);
+  void loadFileMap(std::vector<File> &files, StringRef coveredDir,
+                   std::vector<std::string> &coveredFiles);
 
   CoverageFilePair(StringRef filename, StringRef binary)
       : filename(filename), binary(binary) {}
