@@ -1611,7 +1611,7 @@ void TypeChecker::checkNoEscapeAttr(ParamDecl *PD, NoEscapeAttr *attr) {
   // This decl attribute has been moved to being a type attribute.
   diagnose(attr->getLocation(), diag::attr_decl_attr_now_on_type, "@noescape")
     .fixItRemove(attr->getRangeWithAt())
-    .fixItInsert(PD->getTypeLoc().getSourceRange().Start, "@noescape");
+    .fixItInsert(PD->getTypeLoc().getSourceRange().Start, "@noescape ");
 
   // Change the type to include the noescape bit.
   PD->overwriteType(FunctionType::get(FTy->getInput(), FTy->getResult(),
