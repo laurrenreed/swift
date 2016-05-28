@@ -611,6 +611,8 @@ struct ASTNodeBase {};
       InImplicitBraceStmt.pop_back();
       popScope(BS);
     }
+    
+    bool shouldVerify(PoundDiagnosticDecl *D) { return false; }
 
     bool shouldVerify(OpenExistentialExpr *expr) {
       if (!shouldVerify(cast<Expr>(expr)))

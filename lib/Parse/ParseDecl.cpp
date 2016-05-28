@@ -1731,6 +1731,8 @@ static bool isKeywordPossibleDeclStart(const Token &Tok) {
   case tok::kw_typealias:
   case tok::kw_var:
   case tok::pound_if:
+  case tok::pound_error:
+  case tok::pound_warning:
   case tok::identifier:
   case tok::pound_sourceLocation:
     return true;
@@ -2153,6 +2155,11 @@ ParserStatus Parser::parseDecl(ParseDeclOptions Flags,
       }
       break;
     }
+    case tok::pound_warning:
+    case tok::pound_error:
+      DeclResult = parseDeclPoundDiagnostic();
+      Status = DeclResult;
+      break;
     case tok::pound_sourceLocation:
       Status = parseLineDirective(false);
       break;
@@ -2879,6 +2886,35 @@ ParserResult<IfConfigDecl> Parser::parseDeclIfConfig(ParseDeclOptions Flags) {
                                                  Context.AllocateCopy(Clauses),
                                                  EndLoc, HadMissingEnd);
   return makeParserResult(ICD);
+}
+
+
+/// decl-pound-diagnostic
+///   '#warning' expr-string-literal
+///   '#error' expr-string-literal
+ParserResult<PoundDiagnosticDecl> Parser::parseDeclPoundDiagnostic() {
+  SourceLoc StartLoc;
+  bool IsError = false;
+  if (Tok.is(tok::pound_error)) {
+    StartLoc = consumeToken(tok::pound_error);
+    IsError = true;
+  } else {
+    StartLoc = consumeToken(tok::pound_warning);
+  }
+  
+  ParserResult<Expr> Result = parseExprStringLiteral();
+  if (Result.isNull())
+    return makeParserError();
+  
+  Expr *Content = Result.get();
+  
+  auto Decl = new (Context) PoundDiagnosticDecl(CurDeclContext,
+                                                StartLoc,
+                                                Content->getEndLoc(),
+                                                IsError,
+                                                Content);
+  
+  return makeParserResult(Decl);
 }
 
 /// \brief Parse a typealias decl.

@@ -707,6 +707,9 @@ public:
                                                  DeclAttributes &Attributes);
   
   ParserResult<IfConfigDecl> parseDeclIfConfig(ParseDeclOptions Flags);
+  
+  ParserResult<PoundDiagnosticDecl> parseDeclPoundDiagnostic();
+  
   /// Parse a #line/#sourceLocation directive.
   /// 'isLine = true' indicates parsing #line instead of #sourcelocation
   ParserStatus parseLineDirective(bool isLine = false);

@@ -441,7 +441,7 @@ namespace swift {
 
     /// \brief Whether to treat warnings as errors
     void setWarningsAsErrors(bool val) { warningsAsErrors = val; }
-    bool getWarningsAsErrors() const { return warningsAsErrors; }
+    bool getContentsAsErrors() const { return warningsAsErrors; }
 
     void resetHadAnyError() {
       anyErrorOccurred = false;
@@ -518,8 +518,8 @@ namespace swift {
 
     /// \brief Whether to treat warnings as errors
     void setWarningsAsErrors(bool val) { state.setWarningsAsErrors(val); }
-    bool getWarningsAsErrors() const {
-      return state.getWarningsAsErrors();
+    bool getContentsAsErrors() const {
+      return state.getContentsAsErrors();
     }
 
     void ignoreDiagnostic(DiagID id) {

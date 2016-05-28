@@ -1175,6 +1175,10 @@ void SILGenModule::visitIfConfigDecl(IfConfigDecl *ICD) {
   // to the enclosing declaration.
 }
 
+void SILGenModule::visitPoundDiagnosticDecl(PoundDiagnosticDecl *PWD) {
+  // This is transparent once the initial warning has been emitted.
+}
+
 void SILGenModule::visitTopLevelCodeDecl(TopLevelCodeDecl *td) {
   assert(TopLevelSGF && "top-level code in a non-main source file!");
 

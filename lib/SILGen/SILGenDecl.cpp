@@ -1227,8 +1227,9 @@ void SILGenModule::emitExternalDefinition(Decl *d) {
   case DeclKind::Var:
     // Imported static vars are handled solely in IRGen.
     break;
-
+      
   case DeclKind::IfConfig:
+  case DeclKind::PoundDiagnostic:
   case DeclKind::Extension:
   case DeclKind::PatternBinding:
   case DeclKind::EnumCase:

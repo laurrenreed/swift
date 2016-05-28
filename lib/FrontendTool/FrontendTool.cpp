@@ -311,6 +311,7 @@ static bool emitReferenceDependencies(DiagnosticEngine &diags,
     case DeclKind::PatternBinding:
     case DeclKind::TopLevelCode:
     case DeclKind::IfConfig:
+    case DeclKind::PoundDiagnostic:
       // No action necessary.
       break;
 

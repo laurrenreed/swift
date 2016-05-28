@@ -223,6 +223,11 @@ class Traversal : public ASTVisitor<Traversal, Expr*, Stmt*,
     // TODO: should we recurse within the module?
     return false;
   }
+  
+  bool visitPoundDiagnosticDecl(PoundDiagnosticDecl *WD) {
+    // This expression is transparent to the rest of the compiler.
+    return false;
+  }
 
   bool visitVarDecl(VarDecl *VD) {
     return false;

@@ -48,6 +48,12 @@ public:
     return RetTy();
   }
 
+  // A PoundDiagnosticDecl can syntactically live at type member scope,
+  // but it shouldn't do anything.
+  RetTy visitPoundDiagnosticDecl(PoundDiagnosticDecl *D) {
+    return RetTy();
+  }
+  
   /// A convenience method to visit all the members.
   void visitMembers(NominalTypeDecl *D) {
     for (Decl *member : D->getMembers()) {

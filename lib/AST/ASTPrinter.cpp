@@ -3083,6 +3083,12 @@ void PrintAST::visitPostfixOperatorDecl(PostfixOperatorDecl *decl) {
     });
 }
 
+void PrintAST::visitPoundDiagnosticDecl(PoundDiagnosticDecl *D) {
+  Printer << (D->isError() ? tok::pound_error : tok::pound_warning);
+  Printer << " \"" << D->getText() << "\"";
+  Printer << tok::r_paren;
+}
+
 void PrintAST::visitModuleDecl(ModuleDecl *decl) { }
 
 void PrintAST::visitBraceStmt(BraceStmt *stmt) {

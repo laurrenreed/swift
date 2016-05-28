@@ -1649,6 +1649,7 @@ static void checkAccessibility(TypeChecker &TC, const Decl *D) {
     llvm_unreachable("does not have accessibility");
 
   case DeclKind::IfConfig:
+  case DeclKind::PoundDiagnostic:
     // Does not have accessibility.
   case DeclKind::EnumCase:
     // Handled at the EnumElement level.
@@ -4888,6 +4889,17 @@ public:
   }
 
   void visitModuleDecl(ModuleDecl *) { }
+  
+  void visitPoundDiagnosticDecl(PoundDiagnosticDecl *D) {
+    if (D->hasBeenEmitted())
+      return;
+    
+    TC.diagnose(D->getContent()->getStartLoc(),
+                D->isError() ? diag::pound_error : diag::pound_warning,
+                D->getText());
+    
+    D->setHasBeenEmitted();
+  }
 
   /// Adjust the type of the given declaration to appear as if it were
   /// in the given subclass of its actual declared class.
@@ -6842,6 +6854,7 @@ void TypeChecker::validateDecl(ValueDecl *D, bool resolveTypeParams) {
   case DeclKind::PostfixOperator:
   case DeclKind::PrecedenceGroup:
   case DeclKind::IfConfig:
+  case DeclKind::PoundDiagnostic:
     llvm_unreachable("not a value decl");
 
   case DeclKind::Module:
@@ -7254,6 +7267,7 @@ void TypeChecker::validateAccessibility(ValueDecl *D) {
   case DeclKind::PostfixOperator:
   case DeclKind::PrecedenceGroup:
   case DeclKind::IfConfig:
+  case DeclKind::PoundDiagnostic:
     llvm_unreachable("not a value decl");
 
   case DeclKind::Module:

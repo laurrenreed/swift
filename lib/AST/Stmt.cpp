@@ -354,8 +354,6 @@ GuardStmt::GuardStmt(SourceLoc GuardLoc, Expr *Cond, Stmt *Body,
   : GuardStmt(GuardLoc, exprToCond(Cond, Ctx), Body, implicit) {
     
 }
-  
-
 
 SourceLoc RepeatWhileStmt::getEndLoc() const { return Cond->getEndLoc(); }
 

@@ -155,6 +155,7 @@ private:
     // Active members are attached to the enclosing declaration, so there's no
     // need to walk anything within.
   }
+
   void visitWhileStmt(WhileStmt *S) {
     if (!isReferencePointInRange(S->getSourceRange()))
       return;

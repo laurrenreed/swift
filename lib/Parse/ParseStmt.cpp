@@ -48,6 +48,8 @@ bool Parser::isStartOfStmt() {
   case tok::kw_default:
   case tok::pound_if:
   case tok::pound_sourceLocation:
+  case tok::pound_warning:
+  case tok::pound_error:
     return true;
 
   case tok::pound_line:

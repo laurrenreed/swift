@@ -902,8 +902,16 @@ namespace {
       printAbstractFunctionDecl(FD);
 
       OS << ')';
-     }
-
+    }
+    
+    void visitPoundDiagnosticDecl(PoundDiagnosticDecl *D) {
+      OS.indent(Indent) << "(#warning_decl\n";
+      Indent += 2;
+      printRec(D->getContent());
+      Indent -= 2;
+      OS << ')';
+    }
+    
     void visitConstructorDecl(ConstructorDecl *CD) {
       printCommonAFD(CD, "constructor_decl");
       if (CD->isRequired())

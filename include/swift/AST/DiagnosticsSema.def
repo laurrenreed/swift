@@ -470,6 +470,12 @@ NOTE(selector_construction_suppress_warning,none,
 ERROR(cannot_return_value_from_void_func,none,
       "unexpected non-void return value in void function", ())
 
+// #[warning|error|note]
+
+// This will get filled with the content of the warning statement.
+WARNING(pound_warning, none, "%0", (StringRef))
+ERROR(pound_error, none, "%0", (StringRef))
+
 //------------------------------------------------------------------------------
 // Name Binding
 //------------------------------------------------------------------------------

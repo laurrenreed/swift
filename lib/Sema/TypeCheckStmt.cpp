@@ -509,7 +509,7 @@ public:
     
     return ICS;
   }
-
+    
   Stmt *visitDoStmt(DoStmt *DS) {
     AddLabeledStmt loopNest(*this, DS);
     Stmt *S = DS->getBody();

@@ -1530,6 +1530,9 @@ public:
   void visitAssociatedTypeDecl(AssociatedTypeDecl *D) {
     // No lowering support needed.
   }
+  void visitPoundDiagnosticDecl(PoundDiagnosticDecl *D) {
+    // No lowering support needed.
+  }
 
   void visitVarDecl(VarDecl *D);
 

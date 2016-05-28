@@ -114,7 +114,8 @@ bool SemaAnnotator::walkToDeclPre(Decl *D) {
     Loc = PrecD->getLoc();
     if (Loc.isValid())
       NameLen = PrecD->getName().getLength();
-
+  } else if (isa<PoundDiagnosticDecl>(D)) {
+      return false;
   } else {
     return true;
   }
@@ -448,6 +449,10 @@ bool SemaAnnotator::passCallArgNames(Expr *Fn, TupleExpr *TupleE) {
 
 bool SemaAnnotator::shouldIgnore(Decl *D, bool &ShouldVisitChildren) {
   if (D->isImplicit() && !isa<PatternBindingDecl>(D)) {
+    ShouldVisitChildren = false;
+    return true;
+  }
+  if (isa<PoundDiagnosticDecl>(D)) {
     ShouldVisitChildren = false;
     return true;
   }

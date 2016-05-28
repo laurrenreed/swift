@@ -232,7 +232,7 @@ protected:
   }
 
 public:
-  enum DeclAttrOptions {
+  enum DeclAttrOptions : uint64_t {
     /// True if multiple instances of this attribute are allowed on a single
     /// declaration.
     AllowMultipleAttributes = 1 << 0,
@@ -268,27 +268,28 @@ public:
     OnEnumCase         = 1 << 11,
     OnTopLevelCode     = 1 << 12,
     OnIfConfig         = 1 << 13,
-    OnInfixOperator    = 1 << 14,  // "infix operator"
-    OnPrefixOperator   = 1 << 15,  // "prefix operator"
-    OnPostfixOperator  = 1 << 16,  // "postfix operator"
+    OnPoundDiagnostic     = 1 << 14,
+    OnInfixOperator    = 1 << 15,  // "infix operator"
+    OnPrefixOperator   = 1 << 16,  // "prefix operator"
+    OnPostfixOperator  = 1 << 17,  // "postfix operator"
 
-    OnEnum             = 1 << 17,
-    OnStruct           = 1 << 18,
-    OnClass            = 1 << 19,
-    OnProtocol         = 1 << 20,
-    OnTypeAlias        = 1 << 21,
-    OnVar              = 1 << 22,
-    OnSubscript        = 1 << 23,
+    OnEnum             = 1 << 18,
+    OnStruct           = 1 << 19,
+    OnClass            = 1 << 20,
+    OnProtocol         = 1 << 21,
+    OnTypeAlias        = 1 << 22,
+    OnVar              = 1 << 23,
+    OnSubscript        = 1 << 24,
 
-    OnConstructor      = 1 << 24,
-    OnDestructor       = 1 << 25,
-    OnFunc             = 1 << 26,
-    OnEnumElement      = 1 << 27,
+    OnConstructor      = 1 << 25,
+    OnDestructor       = 1 << 26,
+    OnFunc             = 1 << 27,
+    OnEnumElement      = 1 << 28,
 
-    OnGenericTypeParam = 1 << 28,
-    OnAssociatedType   = 1 << 29,
-    OnParam            = 1 << 30,
-    OnModule           = 1 << 31,
+    OnGenericTypeParam = 1 << 29,
+    OnAssociatedType   = 1 << 30,
+    OnParam            = 1ull << 31,
+    OnModule           = 1ull << 32,
 
     // More coarse-grained aggregations for use in Attr.def.
     OnOperator = OnInfixOperator|OnPrefixOperator|OnPostfixOperator,
@@ -301,9 +302,9 @@ public:
                 OnParam|OnPrecedenceGroup
   };
 
-  static unsigned getOptions(DeclAttrKind DK);
+  static uint64_t getOptions(DeclAttrKind DK);
 
-  unsigned getOptions() const {
+  uint64_t getOptions() const {
     return getOptions(getKind());
   }
 

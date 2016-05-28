@@ -93,6 +93,7 @@ enum class DescriptiveDeclKind : uint8_t {
   EnumCase,
   TopLevelCode,
   IfConfig,
+  PoundDiagnostic,
   PatternBinding,
   Var,
   Param,
@@ -2088,6 +2089,44 @@ public:
   
   static bool classof(const Decl *D) {
     return D->getKind() == DeclKind::IfConfig;
+  }
+};
+  
+/// PoundDiagnosticDecl - #warning or #error declaration. Causes a diagnostic
+/// at the very beginning of type checking.
+class PoundDiagnosticDecl : public Decl {
+  SourceLoc PoundLoc;
+  SourceLoc EndLoc;
+  bool IsError;
+  Expr *Content;
+  bool HasBeenEmitted;
+public:
+  PoundDiagnosticDecl(DeclContext *Parent, SourceLoc PoundLoc,
+                   SourceLoc EndLoc, bool IsError, Expr *Content)
+  : Decl(DeclKind::PoundDiagnostic, Parent),
+    PoundLoc(PoundLoc), EndLoc(EndLoc), IsError(IsError),  Content(Content),
+    HasBeenEmitted(false) {}
+  
+  SourceLoc getLoc() const { return PoundLoc; }
+  SourceLoc getPoundLoc() const { return PoundLoc; }
+  StringRef getText() const;
+  Expr *getContent() const { return Content; }
+  void setWarning(Expr *C) { Content = C; }
+  
+  SourceRange getSourceRange() const {
+    return SourceRange(PoundLoc, EndLoc);
+  }
+  
+  bool isError() { return IsError; }
+  
+  void setHasBeenEmitted(bool E = true) { HasBeenEmitted = E; }
+  bool hasBeenEmitted() { return HasBeenEmitted; }
+  
+  SourceLoc getStartLoc() const { return PoundLoc; }
+  SourceLoc getEndLoc() const { return EndLoc; }
+  
+  static bool classof(const Decl *D) {
+    return D->getKind() == DeclKind::PoundDiagnostic;
   }
 };
 

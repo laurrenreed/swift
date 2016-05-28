@@ -714,7 +714,6 @@ public:
     return S->getKind() == StmtKind::IfConfig;
   }
 };
-
   
 /// WhileStmt - while statement. After type-checking, the condition is of
 /// type Builtin.Int1.
