@@ -175,6 +175,14 @@ static bool isStringToken(const clang::Token &tok) {
          tok.is(clang::tok::utf8_string_literal);
 }
 
+static bool isCharToken(const clang::Token &tok) {
+  return tok.is(clang::tok::char_constant) ||
+         tok.is(clang::tok::wide_char_constant) ||
+         tok.is(clang::tok::utf8_char_constant) ||
+         tok.is(clang::tok::utf16_char_constant) ||
+         tok.is(clang::tok::utf32_char_constant);
+}
+
 static bool isBinaryOperator(const clang::Token &tok) {
   return tok.is(clang::tok::amp) ||
          tok.is(clang::tok::pipe) ||
@@ -199,23 +207,49 @@ static ValueDecl *importStringLiteral(ClangImporter::Implementation &Impl,
   DeclContext *dc = Impl.getClangModuleForMacro(MI);
   if (!dc)
     return nullptr;
-
+  
   assert(isStringToken(tok));
-
+  
   clang::ActionResult<clang::Expr*> result =
-    Impl.getClangSema().ActOnStringLiteral(tok);
+  Impl.getClangSema().ActOnStringLiteral(tok);
   if (!result.isUsable())
     return nullptr;
-
+  
   auto parsed = dyn_cast<clang::StringLiteral>(result.get());
   if (!parsed)
     return nullptr;
-
+  
   Type importTy = Impl.getNamedSwiftType(Impl.getStdlibModule(), "String");
   if (!importTy)
     return nullptr;
-
+  
   return Impl.createConstant(name, dc, importTy, parsed->getString(),
+                             ConstantConvertKind::Coerce, /*static*/ false,
+                             ClangN);
+}
+
+static ValueDecl *importCharacterLiteral(ClangImporter::Implementation &Impl,
+                                         DeclContext *DC,
+                                         const clang::MacroInfo *MI,
+                                         Identifier name,
+                                         const clang::Token &tok,
+                                         const clang::MacroInfo *ClangN) {
+  DeclContext *dc = Impl.getClangModuleForMacro(MI);
+  if (!dc)
+    return nullptr;
+  
+  assert(isCharToken(tok));
+  
+  clang::ActionResult<clang::Expr*> result =
+  Impl.getClangSema().ActOnCharacterConstant(tok);
+  if (!result.isUsable())
+    return nullptr;
+  
+  auto parsed = dyn_cast<clang::CharacterLiteral>(result.get());
+  if (!parsed)
+    return nullptr;
+  
+  return Impl.createConstant(name, dc, parsed->getKind(), parsed->getValue(),
                              ConstantConvertKind::Coerce, /*static*/ false,
                              ClangN);
 }
@@ -236,8 +270,13 @@ static ValueDecl *importLiteral(ClangImporter::Implementation &Impl,
   case clang::tok::utf8_string_literal:
     return importStringLiteral(Impl, DC, MI, name, tok,
                                MappedStringLiteralKind::CString, ClangN);
-
-  // TODO: char literals.
+      
+  case clang::tok::char_constant:
+  case clang::tok::wide_char_constant:
+  case clang::tok::utf8_char_constant:
+  case clang::tok::utf16_char_constant:
+  case clang::tok::utf32_char_constant:
+      return importCharacterLiteral(Impl, DC, MI, name, tok, ClangN);
   default:
     return nullptr;
   }

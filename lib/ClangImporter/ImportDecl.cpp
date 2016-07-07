@@ -6888,6 +6888,27 @@ ClangImporter::Implementation::createConstant(Identifier name, DeclContext *dc,
   return createConstant(name, dc, type, expr, convertKind, isStatic, ClangN);
 }
 
+using CharKind = clang::CharacterLiteral::CharacterKind;
+
+ValueDecl *
+ClangImporter::Implementation::createConstant(Identifier name, DeclContext *dc,
+                                              CharKind charKind,
+                                              unsigned int value,
+                                              ConstantConvertKind convertKind,
+                                              bool isStatic,
+                                              ClangNode ClangN) {
+  if (charKind != clang::CharacterLiteral::Ascii)
+    // TODO: Handle wide/utf8/utf16/utf32 character literals.
+    return nullptr;
+  
+  auto importTy = getNamedSwiftType(getStdlibModule(), "Int8");
+  if (!importTy)
+    return nullptr;
+  auto val = llvm::APSInt::get(value);
+  return createConstant(name, dc, importTy, clang::APValue(val),
+                        convertKind, isStatic, ClangN);
+}
+
 
 ValueDecl *
 ClangImporter::Implementation::createConstant(Identifier name, DeclContext *dc,
