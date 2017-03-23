@@ -987,11 +987,16 @@ TypeIdentifierSyntax SyntaxFactory::makeSelfTypeIdentifier() {
 }
 
 TypeIdentifierSyntax
-SyntaxFactory::makeTypeIdentifier(RC<TokenSyntax> Identifier,
-                                  GenericArgumentClauseSyntax GenericArgs) {
+SyntaxFactory::makeTypeIdentifier(
+  RC<TokenSyntax> Identifier,
+  llvm::Optional<GenericArgumentClauseSyntax> GenericArgs) {
+  auto RawGenericArgs =
+    GenericArgs.hasValue()
+    ? GenericArgs->getRaw()
+    : RawSyntax::missing(SyntaxKind::GenericArgumentClause);
   auto Raw = RawSyntax::make(SyntaxKind::TypeIdentifier,
                              {
-                               Identifier, GenericArgs.getRaw(),
+                               Identifier, RawGenericArgs,
                                TokenSyntax::missingToken(tok::period, "."),
                                RawSyntax::missing(SyntaxKind::TypeIdentifier),
                              },

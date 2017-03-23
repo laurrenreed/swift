@@ -313,7 +313,9 @@ LegacyASTTransformer::visitSimpleIdentTypeRepr(
   SimpleIdentTypeRepr *TR,
   const SyntaxData *Parent,
   const CursorIndex IndexInParent) {
-  return getUnknownTypeRepr(TR);
+  auto IdSyntax = findTokenSyntax(tok::identifier, "", SourceMgr,
+                                  TR->getIdLoc(), BufferID, Tokens);
+  return SyntaxFactory::makeTypeIdentifier(IdSyntax, None).Root;
 }
 
 RC<SyntaxData>

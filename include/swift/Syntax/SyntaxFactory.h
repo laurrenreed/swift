@@ -461,7 +461,7 @@ struct SyntaxFactory {
   /// Make a generic type identifier.
   static TypeIdentifierSyntax
   makeTypeIdentifier(RC<TokenSyntax> Identifier,
-                     GenericArgumentClauseSyntax GenericArgs);
+                     llvm::Optional<GenericArgumentClauseSyntax> GenericArgs);
 
   /// Make a bare "Any" type.
   static TypeIdentifierSyntax makeAnyTypeIdentifier();

@@ -474,12 +474,12 @@ class GenericArgumentClauseSyntaxData final : public SyntaxData {
   GenericArgumentClauseSyntaxData(RC<RawSyntax> Raw,
                                   const SyntaxData *Parent = nullptr,
                                   CursorIndex IndexInParent = 0);
+
+public:
   static RC<GenericArgumentClauseSyntaxData>
   make(RC<RawSyntax> Raw, const SyntaxData *Parent = nullptr,
        CursorIndex IndexInParent = 0);
   static RC<GenericArgumentClauseSyntaxData> makeBlank();
-
-public:
   static bool classof(const SyntaxData *S) {
     return S->getKind() == SyntaxKind::GenericArgumentClause;
   }
