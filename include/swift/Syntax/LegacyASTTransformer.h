@@ -69,11 +69,13 @@ public:
   RC<SyntaxData> getUnknownDecl(Decl *D);
   RC<SyntaxData> getUnknownStmt(Stmt *S);
   RC<SyntaxData> getUnknownExpr(Expr *E);
+  RC<SyntaxData> getUnknownTypeRepr(TypeRepr *T);
   RC<SyntaxData> visitMembers(DeclRange Members);
 
 //  RC<RawSyntax> visitDecl(Decl *D);
 //  RC<RawSyntax> visitExpr(Expr *E);
 //  RC<RawSyntax> visitStmt(Stmt *S);
+//  RC<RawSyntax> visitTypeRepr(TypeRepr *T);
 #define DECL(CLASS, PARENT) RC<SyntaxData> \
   visit##CLASS##Decl(CLASS##Decl *, \
     const SyntaxData *Parent = nullptr, \
@@ -91,21 +93,38 @@ public:
                      const SyntaxData *Parent = nullptr, \
                      const CursorIndex IndexInParent = 0);
 #include "swift/AST/ExprNodes.def"
+
+#define TYPEREPR(CLASS, PARENT) RC<SyntaxData> \
+  visit##CLASS##TypeRepr(CLASS##TypeRepr *, \
+                         const SyntaxData *Parent = nullptr, \
+                         const CursorIndex IndexInParent = 0);
+#include "swift/AST/TypeReprNodes.def"
 };
 
-/// Transform a legacy AST node to a full-fidelity `RC<RawSyntax>`.
+/// Transform a legacy AST node to a full-fidelity `Syntax`.
 ///
-/// If an ASTNode's kind isn't covered by the transform, a `RC<RawSyntax>` for
-/// a SyntaxKind::Unknown will be returned containing all of the TokenSyntaxs that
-/// comprise the node.
+/// If an ASTNode's kind isn't covered by the transform, a `Syntax` for
+/// a `SyntaxKind::Unknown` will be returned containing all of the TokenSyntaxs
+/// that comprise the node.
 ///
-/// If the node isn't expressible in a `RC<RawSyntax>`, then `None` is returned.
+/// If the node isn't expressible in a `Syntax`, then `None` is returned.
 Optional<Syntax>
 transformAST(ASTNode Node,
              sema::Semantics &Sema,
              SourceManager &SourceMgr,
              const unsigned BufferID,
              const TokenPositionList &Tokens);
+
+/// Transform a legacy `TypeRepr` to a full-fidelity `Syntax`.
+///
+/// If a TypeRepr's kind isn't covered by the transform, a `Syntax` for
+/// a `SyntaxKind::UnknownType` will be returned containing all of the
+/// TokenSyntaxs that comprise the TypeRepr.
+Syntax transformTypeRepr(TypeRepr *Node,
+                         sema::Semantics &Sema,
+                         SourceManager &SourceMgr,
+                         const unsigned BufferID,
+                         const TokenPositionList &Tokens);
 
 /// Do a binary search for a token at the given `Offset`.
 RC<TokenSyntax> findTokenSyntax(tok ExpectedKind,

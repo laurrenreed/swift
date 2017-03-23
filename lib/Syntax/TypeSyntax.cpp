@@ -209,6 +209,29 @@ addTypeAttribute(TypeAttributeSyntax NewTypeAttribute) const {
   return Data->replaceSelf<TypeAttributesSyntax>(NewRaw);
 }
 
+#pragma mark - unknown-type Data
+
+UnknownTypeSyntaxData::UnknownTypeSyntaxData(RC<RawSyntax> Raw,
+                                             const SyntaxData *Parent,
+                                             CursorIndex IndexInParent)
+: UnknownSyntaxData(Raw, Parent, IndexInParent) {
+    assert(Raw->Kind == SyntaxKind::UnknownType);
+}
+
+RC<UnknownTypeSyntaxData>
+UnknownTypeSyntaxData::make(RC<RawSyntax> Raw,
+                            const SyntaxData *Parent,
+                            CursorIndex IndexInParent) {
+    auto UnknownRaw = RawSyntax::make(SyntaxKind::UnknownType, Raw->Layout,
+                                      Raw->Presence);
+    return RC<UnknownTypeSyntaxData> {
+        new UnknownTypeSyntaxData {
+            UnknownRaw, Parent, IndexInParent
+        }
+    };
+}
+
+
 #pragma mark - type-identifier Data
 
 TypeIdentifierSyntaxData::TypeIdentifierSyntaxData(RC<RawSyntax> Raw,
@@ -356,6 +379,61 @@ withRightParen(RC<TokenSyntax> NewRightParen) const {
   syntax_assert_token_is(NewRightParen, tok::r_paren, ")");
   auto NewRaw = getRaw()->replaceChild(Cursor::RightParenToken, NewRightParen);
   return Data->replaceSelf<TupleTypeSyntax>(NewRaw);
+}
+
+#pragma mark - tuple-type-element Builder
+
+TupleTypeElementSyntaxBuilder::TupleTypeElementSyntaxBuilder() {}
+
+TupleTypeElementSyntax TupleTypeElementSyntaxBuilder::build() const {
+  auto Raw = RawSyntax::make(SyntaxKind::TupleTypeElement,
+                             {
+                               LabelToken,
+                               ColonToken,
+                               Attributes,
+                               InOutToken,
+                               Type,
+                               CommaToken
+                             },
+                             SourcePresence::Present);
+  auto Data = TupleTypeElementSyntaxData::make(Raw);
+  return TupleTypeElementSyntax { Data, Data.get() };
+}
+
+TupleTypeElementSyntaxBuilder &
+TupleTypeElementSyntaxBuilder::useLabel(RC<TokenSyntax> Label) {
+  LabelToken = Label;
+  return *this;
+}
+
+TupleTypeElementSyntaxBuilder &
+TupleTypeElementSyntaxBuilder::useColon(RC<TokenSyntax> Colon) {
+  ColonToken = Colon;
+  return *this;
+}
+
+TupleTypeElementSyntaxBuilder &
+TupleTypeElementSyntaxBuilder::useAttributes(TypeAttributesSyntax Attributes) {
+  this->Attributes = Attributes.getRaw();
+  return *this;
+}
+
+TupleTypeElementSyntaxBuilder &
+TupleTypeElementSyntaxBuilder::useInOut(RC<TokenSyntax> InOut) {
+  InOutToken = InOut;
+  return *this;
+}
+
+TupleTypeElementSyntaxBuilder &
+TupleTypeElementSyntaxBuilder::useType(TypeSyntax Type) {
+  this->Type = Type.getRaw();
+  return *this;
+}
+
+TupleTypeElementSyntaxBuilder &
+TupleTypeElementSyntaxBuilder::useComma(RC<TokenSyntax> Comma) {
+  CommaToken = Comma;
+  return *this;
 }
 
 #pragma mark - tuple-type Builder

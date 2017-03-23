@@ -23,6 +23,7 @@
 #include "swift/Syntax/Syntax.h"
 #include "swift/Syntax/SyntaxData.h"
 #include "swift/Syntax/TokenSyntax.h"
+#include "swift/Syntax/UnknownSyntax.h"
 
 namespace swift {
 namespace syntax {
@@ -248,6 +249,41 @@ public:
   }
 };
 
+#pragma mark - unknown-type Data
+
+class UnknownTypeSyntaxData final : public UnknownSyntaxData {
+  friend struct SyntaxFactory;
+  friend class UnknownTypeSyntax;
+  friend class SyntaxData;
+
+protected:
+  UnknownTypeSyntaxData(RC<RawSyntax> Raw,
+                        const SyntaxData *Parent = nullptr,
+                        CursorIndex IndexInParent = 0);
+public:
+  static RC<UnknownTypeSyntaxData> make(RC<RawSyntax> Raw,
+                                        const SyntaxData *Parent = nullptr,
+                                        CursorIndex IndexInParent = 0);
+  static bool classof(const Syntax *S) {
+    return S->getKind() == SyntaxKind::UnknownType;
+  }
+};
+
+
+#pragma mark - unknown-type Data
+
+class UnknownTypeSyntax final : public UnknownSyntax {
+  friend struct SyntaxFactory;
+  friend class SyntaxData;
+  using DataType = UnknownTypeSyntaxData;
+protected:
+  UnknownTypeSyntax(const RC<SyntaxData> Root, const TypeSyntaxData *Data);
+public:
+  static bool classof(const Syntax *S) {
+    return S->getKind() == SyntaxKind::UnknownType;
+  }
+};
+
 #pragma mark - type-identifier Data
 
 class TypeIdentifierSyntaxData final : public TypeSyntaxData {
@@ -319,6 +355,7 @@ public:
 
 class TupleTypeElementSyntaxData final : public SyntaxData {
   friend class SyntaxData;
+  friend class TupleTypeElementSyntaxBuilder;
   friend struct SyntaxFactory;
 
   TupleTypeElementSyntaxData(RC<RawSyntax> Raw,
@@ -342,6 +379,7 @@ public:
 /// a type without a label.
 class TupleTypeElementSyntax final : public Syntax {
   friend struct SyntaxFactory;
+  friend class TupleTypeElementSyntaxBuilder;
   friend class TupleTypeElementSyntaxData;
   friend class SyntaxData;
 
@@ -408,6 +446,43 @@ public:
 
 using TupleTypeElementListSyntax =
   SyntaxCollection<SyntaxKind::TupleTypeElementList, TupleTypeElementSyntax>;
+
+/// Incrementally builds tuple type syntax.
+class TupleTypeElementSyntaxBuilder final {
+  RC<TokenSyntax> LabelToken;
+  RC<TokenSyntax> ColonToken;
+  RC<RawSyntax> Attributes;
+  RC<TokenSyntax> InOutToken;
+  RC<RawSyntax> Type;
+  RC<TokenSyntax> CommaToken;
+
+public:
+  TupleTypeElementSyntaxBuilder();
+
+  /// Use the given label token when building the tuple type element syntax.
+  TupleTypeElementSyntaxBuilder &useLabel(RC<TokenSyntax> Label);
+
+  /// Use the given colon ':' token when building the tuple type element syntax.
+  TupleTypeElementSyntaxBuilder &useColon(RC<TokenSyntax> Colon);
+
+  /// Use the given type attributes when building the tuple type element syntax.
+  TupleTypeElementSyntaxBuilder &useAttributes(TypeAttributesSyntax Attributes);
+
+  /// Use the given 'inout' token when building the tuple type element syntax.
+  TupleTypeElementSyntaxBuilder &useInOut(RC<TokenSyntax> InOut);
+
+  /// Use the given type syntax when building the tuple type element syntax.
+  TupleTypeElementSyntaxBuilder &useType(TypeSyntax Type);
+
+  /// Use the given comma token ',' when building the tuple type element syntax.
+  TupleTypeElementSyntaxBuilder &useComma(RC<TokenSyntax> Comma);
+
+  /// Build a TupleTypeElementSyntax from the pieces seen so far.
+  ///
+  /// This method is stateless and can be called multiple times to get
+  /// new tuple type element syntax nodes.
+  TupleTypeElementSyntax build() const;
+};
 
 #pragma mark - tuple-type Data
 

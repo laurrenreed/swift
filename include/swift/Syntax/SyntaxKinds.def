@@ -64,6 +64,7 @@ ABSTRACT_SYNTAX(GenericRequirementSyntax, Syntax)
 // Types
 ABSTRACT_SYNTAX(TypeSyntax, Syntax)
   MISSING_SYNTAX(MissingType, TypeSyntax)
+  SYNTAX(UnknownType, TypeSyntax)
   SYNTAX(MetatypeType, TypeSyntax)
   SYNTAX(TypeIdentifier, TypeSyntax)
   SYNTAX(TupleType, TypeSyntax)

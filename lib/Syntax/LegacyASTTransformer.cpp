@@ -116,6 +116,16 @@ syntax::transformAST(ASTNode Node,
   return None;
 }
 
+Syntax syntax::transformTypeRepr(TypeRepr *TR,
+                                 sema::Semantics &Sema,
+                                 SourceManager &SourceMgr,
+                                 const unsigned BufferID,
+                                 const TokenPositionList &Tokens) {
+  LegacyASTTransformer Transformer { Sema, SourceMgr, BufferID, Tokens };
+  auto Transformed = Transformer.visit(TR);
+  return Syntax { Transformed, Transformed.get() };
+}
+
 SourceLoc LegacyASTTransformer::getStartLocForDecl(const Decl *D) const {
   return D->getAttrs().isEmpty()
     ? D->getStartLoc()
@@ -161,7 +171,7 @@ RC<SyntaxData> LegacyASTTransformer::getUnknownDecl(Decl *D) {
   std::copy(ComprisingTokens.begin(),
             ComprisingTokens.end(),
             std::back_inserter(Layout));
-  auto Raw = RawSyntax::make(SyntaxKind::UnknownExpr,
+  auto Raw = RawSyntax::make(SyntaxKind::UnknownDecl,
                              Layout,
                              SourcePresence::Present);
   return UnknownDeclSyntaxData::make(Raw);
@@ -175,7 +185,7 @@ RC<SyntaxData> LegacyASTTransformer::getUnknownStmt(Stmt *S) {
   std::copy(ComprisingTokens.begin(),
             ComprisingTokens.end(),
             std::back_inserter(Layout));
-  auto Raw = RawSyntax::make(SyntaxKind::UnknownExpr,
+  auto Raw = RawSyntax::make(SyntaxKind::UnknownStmt,
                              Layout,
                              SourcePresence::Present);
   return UnknownStmtSyntaxData::make(Raw);
@@ -193,6 +203,174 @@ RC<SyntaxData> LegacyASTTransformer::getUnknownExpr(Expr *E) {
                              Layout,
                              SourcePresence::Present);
   return UnknownExprSyntaxData::make(Raw);
+}
+
+RC<SyntaxData> LegacyASTTransformer::getUnknownTypeRepr(TypeRepr *T) {
+  SourceRange SR = { T->getStartLoc(), T->getEndLoc() };
+  auto ComprisingTokens = getTokenSyntaxsInRange(SR, SourceMgr,
+                                                 BufferID, Tokens);
+
+  RawSyntax::LayoutList Layout;
+  std::copy(ComprisingTokens.begin(),
+            ComprisingTokens.end(),
+            std::back_inserter(Layout));
+
+  auto Raw = RawSyntax::make(SyntaxKind::UnknownType,
+                             Layout,
+                             SourcePresence::Present);
+  return UnknownTypeSyntaxData::make(Raw);
+}
+
+#pragma mark - Types
+
+RC<SyntaxData>
+LegacyASTTransformer::visitArrayTypeRepr(ArrayTypeRepr *TR,
+                                         const SyntaxData *Parent,
+                                         const CursorIndex IndexInParent) {
+  return getUnknownTypeRepr(TR);
+}
+
+RC<SyntaxData>
+LegacyASTTransformer::visitFunctionTypeRepr(FunctionTypeRepr *TR,
+                                            const SyntaxData *Parent,
+                                            const CursorIndex IndexInParent) {
+  return getUnknownTypeRepr(TR);
+}
+
+RC<SyntaxData>
+LegacyASTTransformer::visitErrorTypeRepr(ErrorTypeRepr *TR,
+                                         const SyntaxData *Parent,
+                                         const CursorIndex IndexInParent) {
+  return getUnknownTypeRepr(TR);
+}
+
+RC<SyntaxData>
+LegacyASTTransformer::visitFixedTypeRepr(FixedTypeRepr *TR,
+                                         const SyntaxData *Parent,
+                                         const CursorIndex IndexInParent) {
+  return getUnknownTypeRepr(TR);
+}
+
+RC<SyntaxData>
+LegacyASTTransformer::visitMetatypeTypeRepr(MetatypeTypeRepr *TR,
+                                            const SyntaxData *Parent,
+                                            const CursorIndex IndexInParent) {
+  return getUnknownTypeRepr(TR);
+}
+
+RC<SyntaxData>
+LegacyASTTransformer::visitOptionalTypeRepr(OptionalTypeRepr *TR,
+                                            const SyntaxData *Parent,
+                                            const CursorIndex IndexInParent) {
+  return getUnknownTypeRepr(TR);
+}
+
+RC<SyntaxData>
+LegacyASTTransformer::visitProtocolTypeRepr(ProtocolTypeRepr *TR,
+                                            const SyntaxData *Parent,
+                                            const CursorIndex IndexInParent) {
+  return getUnknownTypeRepr(TR);
+}
+
+RC<SyntaxData>
+LegacyASTTransformer::visitDictionaryTypeRepr(DictionaryTypeRepr *TR,
+                                              const SyntaxData *Parent,
+                                              const CursorIndex IndexInParent) {
+  return getUnknownTypeRepr(TR);
+}
+
+RC<SyntaxData>
+LegacyASTTransformer::visitAttributedTypeRepr(AttributedTypeRepr *TR,
+                                              const SyntaxData *Parent,
+                                              const CursorIndex IndexInParent) {
+  return getUnknownTypeRepr(TR);
+}
+
+RC<SyntaxData>
+LegacyASTTransformer::visitCompositionTypeRepr(
+  CompositionTypeRepr *TR,
+  const SyntaxData *Parent,
+  const CursorIndex IndexInParent) {
+  return getUnknownTypeRepr(TR);
+}
+
+RC<SyntaxData>
+LegacyASTTransformer::visitInOutTypeRepr(InOutTypeRepr *TR,
+                                         const SyntaxData *Parent,
+                                         const CursorIndex IndexInParent) {
+  return getUnknownTypeRepr(TR);
+}
+
+RC<SyntaxData>
+LegacyASTTransformer::visitSILBoxTypeRepr(SILBoxTypeRepr *TR,
+                                          const SyntaxData *Parent,
+                                          const CursorIndex IndexInParent) {
+  return getUnknownTypeRepr(TR);
+}
+
+RC<SyntaxData>
+LegacyASTTransformer::visitSimpleIdentTypeRepr(
+  SimpleIdentTypeRepr *TR,
+  const SyntaxData *Parent,
+  const CursorIndex IndexInParent) {
+  return getUnknownTypeRepr(TR);
+}
+
+RC<SyntaxData>
+LegacyASTTransformer::visitGenericIdentTypeRepr(
+  GenericIdentTypeRepr *TR,
+  const SyntaxData *Parent,
+  const CursorIndex IndexInParent) {
+  return getUnknownTypeRepr(TR);
+}
+
+RC<SyntaxData>
+LegacyASTTransformer::visitCompoundIdentTypeRepr(
+  CompoundIdentTypeRepr *TR,
+  const SyntaxData *Parent,
+  const CursorIndex IndexInParent) {
+  return getUnknownTypeRepr(TR);
+}
+
+RC<SyntaxData>
+LegacyASTTransformer::visitImplicitlyUnwrappedOptionalTypeRepr(
+  ImplicitlyUnwrappedOptionalTypeRepr *TR,
+  const SyntaxData *Parent,
+  const CursorIndex IndexInParent) {
+  return getUnknownTypeRepr(TR);
+}
+
+RC<SyntaxData>
+LegacyASTTransformer::visitTupleTypeRepr(TupleTypeRepr *TR,
+                                         const SyntaxData *Parent,
+                                         const CursorIndex IndexInParent) {
+  TupleTypeSyntaxBuilder Builder;
+  if (TR->getParens().isValid()) {
+    auto LParenSyntax = findTokenSyntax(tok::l_paren, "(", SourceMgr,
+                                        TR->getParens().Start,
+                                        BufferID, Tokens);
+    auto RParenSyntax = findTokenSyntax(tok::r_paren, ")", SourceMgr,
+                                        TR->getParens().End,
+                                        BufferID, Tokens);
+    Builder.useLeftParen(LParenSyntax);
+    Builder.useRightParen(RParenSyntax);
+  }
+  for (unsigned i = 0; i < TR->getNumElements(); ++i) {
+    auto Element = TR->getElement(i);
+    auto Transformed = transformTypeRepr(Element, Sema, SourceMgr,
+                                       BufferID, Tokens);
+    auto ElementTypeSyntax = cast<TypeSyntax>(Transformed);
+    auto ElementBuilder = TupleTypeElementSyntaxBuilder();
+    if (auto NameLoc = TR->getElementNameLoc(i); NameLoc.isValid()) {
+      ElementBuilder.useLabel(findTokenSyntax(tok::identifier,
+                                              "", SourceMgr, NameLoc,
+                                              BufferID, Tokens));
+    }
+    // TODO: Add ColonLoc, Attributes, InOut, and CommaLoc representation to
+    // TupleTypeRepr.
+    Builder.addElementTypeSyntax(ElementBuilder.build());
+  }
+  return Builder.build().Root;
 }
 
 #pragma mark - Declarations
