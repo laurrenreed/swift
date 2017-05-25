@@ -21,6 +21,7 @@
 #include "swift/Syntax/RawTokenSyntax.h"
 #include "swift/Syntax/References.h"
 #include "swift/Syntax/Syntax.h"
+#include "swift/Syntax/SyntaxData.h"
 #include "swift/Syntax/TokenKinds.h"
 #include "swift/Syntax/Trivia.h"
 
@@ -31,6 +32,7 @@ class TokenSyntax final : public Syntax {
 protected:
   virtual void validate() const override {
     assert(getRaw()->isToken());
+
   }
 public:
   TokenSyntax(const RC<SyntaxData> Root, const SyntaxData *Data)
@@ -44,14 +46,6 @@ public:
     return make<TokenSyntax>(RawTokenSyntax::missingToken(Kind, Text));
   }
 
-  const Trivia &getLeadingTrivia() const {
-    return getRawToken()->LeadingTrivia;
-  }
-
-  const Trivia &getTrailingTrivia() const {
-    return getRawToken()->TrailingTrivia;
-  }
-
   TokenSyntax withLeadingTrivia(const Trivia &Trivia) const {
     auto NewRaw = getRawToken()->withLeadingTrivia(Trivia);
     return Data->replaceSelf<TokenSyntax>(NewRaw);
@@ -62,32 +56,59 @@ public:
     return Data->replaceSelf<TokenSyntax>(NewRaw);
   }
 
-  bool isKeyword() const {
-    return getRawToken()->isKeyword();
+  /// Returns the text of the token without trivia.
+  std::string getText() const {
+    return getRawToken()->Text.str();
   }
 
+  /// Returns the leading trivia of the token.
+  const Trivia &getLeadingTrivia() const {
+    return getRawToken()->LeadingTrivia;
+  }
+
+  /// Returns the trailing trivia of the token.
+  const Trivia &getTrailingTrivia() const {
+    return getRawToken()->TrailingTrivia;
+  }
+
+  /// Returns true if the token is missing.
   bool isMissing() const {
     return getRawToken()->isMissing();
   }
 
-  bool isPunctuation() const {
-    return getRawToken()->isPunctuation();
-  }
-
-  bool isOperator() const {
-    return getRawToken()->isOperator();
-  }
-
-  bool isLiteral() const {
-    return getRawToken()->isLiteral();
-  }
-
+  /// Returns the kind of token this is.
   tok getTokenKind() const {
     return getRawToken()->getTokenKind();
   }
 
-  StringRef getText() const {
-    return getRawToken()->getText();
+  /// Returns true if the token is of the ExpectedKind and,
+  /// if non-empty, has the same spelling as ExpectedText.
+  bool is(tok ExpectedKind, StringRef ExpectedText) const {
+    return getRawToken()->is(ExpectedKind, ExpectedText);
+  }
+
+  /// Returns true if the token is of the given kind.
+  bool is(tok K) const {
+    return getRawToken()->is(K);
+  }
+
+  /// Returns true if the token is not of the given kind.
+  bool isNot(tok K) const {
+    return getRawToken()->isNot(K);
+  }
+
+  /// Returns true if the token is some kind of keyword.
+  bool isKeyword() const {
+    return getRawToken()->isKeyword();
+  }
+
+  /// Returns true if the token is some kind of literal.
+  bool isLiteral() const {
+    return getRawToken()->isLiteral();
+  }
+
+  static bool classof(const Syntax *S) {
+    return S->getKind() == SyntaxKind::Token;
   }
 };
 
