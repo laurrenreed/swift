@@ -3,6 +3,9 @@ add_swift_host_tool(swift-syntax-tblgen
   LLVM_COMPONENT_DEPENDS
     Support
     TableGen
+  LINK_LIBRARIES
+    swiftBasic
+    clangBasic
   SWIFT_COMPONENT tools
 )
 add_dependencies(swift-syntax-all-generated-source swift-syntax-tblgen)
