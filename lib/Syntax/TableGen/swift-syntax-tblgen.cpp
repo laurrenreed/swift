@@ -323,8 +323,8 @@ public:
 
   virtual bool printSyntaxImplementations() {
     const auto Nodes = getRecordsForCategory(options::Category);
+    printAutogenReminder(OS);
     for (const auto *Node : Nodes) {
-      printAutogenReminder(OS);
       printPragma(Node->getName().str() + " Data");
       printSyntaxDataImplementation(*Node);
       printPragma(Node->getName().str() + " API");
@@ -368,33 +368,10 @@ public:
   virtual void printPragma(std::string MarkName) {}
 
   virtual void printTokenAssertion(std::string VariableName,
-                                   const Record &TokenRec) {
-    assert(isToken(TokenRec));
-    auto Kind = TokenRec.getValueAsString("Kind");
-    if (canBeAnyOfSyntaxCategory(TokenRec)) {
-      OS << "    precondition(" << VariableName << ".isToken);\n";
-    } else {
-        OS << "    guard case ." << sanitized(Kind) << "? = (" << VariableName
-           << "as? RawTokenSyntax).tokenKind else {\n"
-              "    fatalError(\"incorrect token kind\")\n"
-              "  }\n\n";
-    }
-  }
+                                   const Record &TokenRec) {}
 
   virtual void printSyntaxAssertion(Twine ChildVariable,
-                                    const RecordVal Child) {
-    auto NodeType = getLayoutNodeRecord(Child);
-    auto NodeTypeName = NodeType.getName();
-    auto NodeKind = stripSyntaxSuffix(NodeTypeName);
-    if (canBeAnyOfSyntaxCategory(NodeType)) {
-      auto &Category = getSyntaxCategory(NodeType);
-      OS << "    precondition(" << ChildVariable << ".is"
-         << Category.getName() << ")\n";
-    } else {
-      OS << "    precondition(" << ChildVariable << ".kind == ."
-         << sanitized(NodeKind) << ")\n";
-    }
-  }
+                                    const RecordVal Child) {}
 
   bool genInterface() {
     switch (getCategory()) {
@@ -473,59 +450,121 @@ public:
     return false;
   }
 
+  virtual void printTokenAssertion(std::string VariableName,
+                                   const Record &TokenRec) {
+    assert(isToken(TokenRec));
+    auto Kind = TokenRec.getValueAsString("Kind");
+    if (canBeAnyOfSyntaxCategory(TokenRec)) {
+      OS << "    precondition(" << VariableName << ".isToken)\n";
+    } else {
+      OS << "    guard case ." << sanitized(Kind) << "? = (" << VariableName
+      << " as? RawTokenSyntax)?.tokenKind else {\n"
+      "      fatalError(\"incorrect token kind\")\n"
+      "    }\n\n";
+    }
+  }
+
+  virtual void printSyntaxAssertion(Twine ChildVariable,
+                                    const RecordVal Child) {
+    auto NodeType = getLayoutNodeRecord(Child);
+    auto NodeTypeName = NodeType.getName();
+    auto NodeKind = stripSyntaxSuffix(NodeTypeName);
+    if (canBeAnyOfSyntaxCategory(NodeType)) {
+      auto &Category = getSyntaxCategory(NodeType);
+      OS << "    precondition(" << ChildVariable << ".is"
+      << Category.getName() << ")\n";
+    } else {
+      OS << "    precondition(" << ChildVariable << ".kind == ."
+      << sanitized(NodeKind) << ")\n";
+    }
+  }
+
   virtual void printPragma(std::string Mark) {
-    OS << "\n\n/// MARK: " << Mark << "\n\n";
+    OS << "/// MARK: " << Mark << "\n\n";
+  }
+
+  std::string getCursorName(RecordVal &Child, bool VariableName = true) {
+    auto ChildName = Child.getName().str();
+    auto ChildRec = getLayoutNodeRecord(Child);
+    if (isToken(ChildRec)) {
+      ChildName = ChildName + "Token";
+    }
+    return VariableName ? sanitized(ChildName) : ChildName;
   }
 
   virtual bool printSyntaxDataInterface(const Record &Node) { return false; }
   virtual bool printSyntaxDataImplementation(const Record &Node) {
     auto ClassName = Node.getName();
     auto Kind = stripSyntaxSuffix(ClassName);
+    auto KindEnumCase = sanitized(Kind);
     auto SuperclassName = Node.getSuperClasses().back().first->getName();
     auto DataClassName = ClassName + "Data";
     auto DataSuperclassName = SuperclassName + "Data";
+    llvm::SmallVector<std::string, 10> CursorNames;
 
     OS << "class " << DataClassName << ": " << DataSuperclassName
        << " {\n";
 
-    // Constructor
-    OS << "  init(raw: RawSyntaxProtocol, indexInParent: Int, parent: SyntaxData?) {\n"
+    // Caches for variables
+    for (auto Child : getChildrenOf(Node)) {
+      auto ChildName = getCursorName(Child);
+      auto ChildClassName = getCursorName(Child, /*VariableName=*/false);
+      OS << "  private var _" << ChildName << "Cache: ThreadSafeCache<"
+         << ChildClassName << "SyntaxData>!\n";
+      OS << "  var " << ChildName << ": " << ChildClassName << "Syntax {\n"
+         << "    return _" << ChildName << "Cache.value\n"
+         << "  }\n\n";
+    }
+
+    // required initializer
+    OS << "  required init(raw: RawSyntaxProtocol, indexInParent: Int, parent: SyntaxData?) {\n"
           "    super.init(raw: raw, indexInParent: indexInParent, parent: parent)\n"
-          "    precondition(raw.kind == ." << sanitized(Kind) << ")\n"
+          "    precondition(raw.kind == ." << KindEnumCase << ")\n"
           "    precondition(raw.layout.count == " << getChildrenOf(Node).size() << ")\n";
-    for (const auto Child : getChildrenOf(Node)) {
-      auto ChildName = Child.getName();
+    for (auto Child : getChildrenOf(Node)) {
+      auto ChildName = getCursorName(Child);
+      CursorNames.emplace_back(ChildName);
       auto ChildType = getLayoutNodeRecord(Child);
-      auto ChildVariable = "Raw->getChild(" + ClassName + "::Cursor::" +
-      ChildName + ")";
+      auto ChildVariable = "raw[Cursor." + ChildName + "]";
       if (isToken(ChildType)) {
-        printTokenAssertion(ChildVariable.str(), ChildType);
+        printTokenAssertion(ChildVariable, ChildType);
       } else {
         printSyntaxAssertion(ChildVariable, Child);
       }
+      OS << "    _" << ChildName << "Cache = ThreadSafeCache(lock: lock) {\n"
+         << "      return self.realizeChild(Cursor." << ChildName << ")\n"
+         << "    }\n";
     }
     OS << "  }\n\n";
 
-    // makeBlank
+    // static func blank()
     OS << "  static func blank() -> " << DataClassName << " {\n"
-          "    return " << DataClassName << "(raw: RawSyntax(kind: ." << sanitized(Kind) << ",\n"
-          "      layout: [\n";
+          "    let raw = RawSyntax(kind: ." << sanitized(Kind) << ",\n"
+          "                        layout: [\n";
     for (const auto Child : getChildrenOf(Node)) {
       auto ChildType = getLayoutNodeRecord(Child);
       if (isToken(ChildType)) {
         auto ChildRec = getLayoutNodeRecord(Child);
         auto TokenKind = ChildRec.getValueAsString("Kind");
         auto TokenSpelling = ChildRec.getValueAsString("Spelling");
-        OS << "        RawTokenSyntax.missing(kind: ." << sanitized(TokenKind) << "),\n";
+        OS << "                          RawTokenSyntax.missing(." << sanitized(TokenKind) << ", text: \"" << TokenSpelling << "\"),\n";
       } else {
         auto ChildKind = getMissingSyntaxKind(Child);
-        OS << "        RawSyntax.missing(kind: ." << sanitized(ChildKind) << "),\n";
+        OS << "                          RawSyntax.missing(." << sanitized(ChildKind) << "),\n";
       }
     }
-    OS << "      ],\n"
-          "      presence: .present), parent: nil)\n"
-          "  }\n"
-          "}\n\n";
+    OS << "                        ],\n"
+          "                        presence: .present)\n"
+          "    return " << DataClassName << "(raw: raw, indexInParent: 0, parent: nil)\n"
+          "  }\n\n";
+
+    OS << "  enum Cursor: Int {\n";
+    for (const auto Cursor : CursorNames) {
+      OS << "    case " << Cursor << "\n";
+    }
+    OS << "  }\n";
+
+    OS << "}\n\n";
 
     return false;
   }
@@ -990,32 +1029,112 @@ static bool SyntaxTableGenMain(raw_ostream &OS, RecordKeeper &Records) {
   }
 }
 
+enum EnumGenerateFlags: uint8_t {
+  Base = 0,
+  Text = 1 << 0,
+  Equals = 1 << 1
+};
+
+std::string escaped(StringRef str) {
+  if (str == "\\") {
+    return "\\\\";
+  }
+  return str;
+}
+
 void printSwiftEnum(raw_ostream &os, StringRef name,
+                    uint8_t Flags,
                     ArrayRef<StringRef> vals,
-                    ArrayRef<StringRef> texts) {
+                    ArrayRef<StringRef> stringContaining = {},
+                    ArrayRef<StringRef> texts = {}) {
   os << "public enum " << name.str() << " {\n";
+  for (auto name : stringContaining) {
+    os << "  case " << name << "(String)\n";
+  }
   for (auto name : vals) {
-    if (name.startswith("sil")) continue;
-    os << "  case " << sanitized(name) << "\n";
+    os << "  case " << name << "\n";
   }
-  if (texts.empty()) {
-    os << "}\n";
-    return;
+  if (Flags & EnumGenerateFlags::Text) {
+    os << "\n  var text: String {\n"
+          "    switch self {\n";
+    for (auto name : stringContaining) {
+      os << "    case ." << name << "(let text): return text\n";
+    }
+    for (size_t i = 0; i < texts.size(); i += 1) {
+      auto text = escaped(texts[i]);
+      os << "    case ." << vals[i] << ": return \"" << text << "\"\n";
+    }
+    os << "    }\n"
+          "  }\n";
   }
-  os << "\n"
-     << "  var text: String {\n"
-     << "    switch self {\n";
-  for (size_t i = 0; i < texts.size(); ++i) {
-    if (name.startswith("sil")) continue;
-    os << "      case ." << sanitized(vals[i])
-       << ": return \"" << texts[i] << "\"\n";
+  os << "}\n\n";
+
+  if (Flags & EnumGenerateFlags::Equals) {
+    os << "extension " << name.str() << ": Equatable {\n"
+          "  public static func ==(lhs: " << name.str() << ", rhs: " << name.str()
+       << ") -> Bool {\n"
+          "    switch (lhs, rhs) {\n";
+    for (auto name : vals) {
+      os << "    case (." << name << ", ." << name << "): return true\n";
+    }
+    for (auto name : stringContaining) {
+      os << "    case let (." << name << "(lhsText), ." << name
+         << "(rhsText)): return lhsText == rhsText\n";
+    }
+    os << "    default: return false\n"
+          "    }\n"
+          "  }\n"
+          "}\n\n";
   }
-  os << "    }\n"
-     << "  }\n"
-     << "}\n";
 }
 
 int main(int argc, char **argv) {
+  printSwiftEnum(llvm::outs(), "TokenKind",
+                 EnumGenerateFlags::Text | EnumGenerateFlags::Equals,
+  {
+    "eof",
+#define KEYWORD(Id) #Id "Keyword",
+#define PUNCTUATOR(Id, Text) #Id,
+#define POUND_KEYWORD(Id) "pound" #Id,
+#define POUND_OLD_OBJECT_LITERAL(Id, A, B, C) // Ignoring old object literal syntax
+#define SIL_KEYWORD(Id) // Ignoring SIL keyword
+#define SIL_PUNCTUATOR(Id, Text) // Ignoring SIL punctuator
+#include "swift/Syntax/TokenKinds.def"
+  },
+  /* string containing */
+  {
+   "identifier",
+   "integerLiteral",
+   "floatingLiteral",
+   "unspacedBinaryOperator",
+   "spacedBinaryOperator",
+   "postfixOperator",
+   "prefixOperator",
+   "dollarIdentifier",
+   "stringLiteral",
+   "comment",
+  },
+  /* text values */
+  {
+    "eof",
+#define KEYWORD(Id) #Id,
+#define PUNCTUATOR(Id, Text) Text,
+#define POUND_KEYWORD(Id) #Id,
+#define POUND_OLD_OBJECT_LITERAL(Id, A, B, C) // Ignoring old object literal syntax
+#define SIL_KEYWORD(Id) // Ignoring SIL keyword
+#define SIL_PUNCTUATOR(Id, Text) // Ignoring SIL punctuator
+#include "swift/Syntax/TokenKinds.def"
+  });
+  /*
+  printSwiftEnum(llvm::outs(), "SyntaxKind", EnumGenerateFlags::Base, {
+    "Token",
+    "Unknown",
+#define SYNTAX(Id, Parent) #Id,
+#define SYNTAX_COLLECTION(Id, Element) #Id,
+#define MISSING_SYNTAX(Id, Parent) #Id,
+#include "swift/Syntax/SyntaxKinds.def"
+   })
+   */
   sys::PrintStackTraceOnErrorSignal(argv[0]);
   cl::ParseCommandLineOptions(argc, argv);
   if (getCategory() == Category::Unknown) {
