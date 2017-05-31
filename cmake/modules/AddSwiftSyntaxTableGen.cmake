@@ -20,7 +20,7 @@ function(swift_add_syntax_generated_source category)
 
   if (${SYNTAX_GEN_TARGET_LANGUAGE} STREQUAL "swift")
     set(out_filename "${out_filename}.swift")
-  elseif (${SYNTAX_GEN_TARGET_LANGUAGE STREQUAL "c++")
+  elseif (${SYNTAX_GEN_TARGET_LANGUAGE} STREQUAL "c++")
     if (${SYNTAX_GEN_ACTION} STREQUAL "interface")
       set(out_filename "${out_filename}.h")
     elseif (${SYNTAX_GEN_ACTION} STREQUAL "implementation")

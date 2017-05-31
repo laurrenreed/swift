@@ -9,7 +9,7 @@ foreach(category ${SYNTAX_GEN_CATEGORIES})
   swift_add_syntax_generated_source(${category}
     OUTPUT_DIR ${syntax_gen_output_dir}
     ACTION implementation
-    TARGET_LANGUAGE swift)
+    TARGET_LANGUAGE c++)
   list(APPEND generated_sources "${out_filename}")
 endforeach()
 

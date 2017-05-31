@@ -149,7 +149,7 @@ static const Record &getLayoutNodeRecord(const RecordVal Child) {
 }
 
 static const Record *getBaseSyntaxCategory(const Record &Child) {
-  for (const auto Super : Child.getSuperClasses()) {
+  for (const auto &Super : Child.getSuperClasses()) {
     if (isBaseSyntaxClass(*Super.first)) {
       return Super.first;
     }
@@ -171,7 +171,7 @@ static const StringRef getChildTypeName(const Record &Rec) {
 
 static const Record &
 getSyntaxCategory(const Record &Def) {
-  for (const auto Super : Def.getSuperClasses()) {
+  for (const auto &Super : Def.getSuperClasses()) {
     if (SyntaxCategories.count(Super.first)) {
       return *Super.first;
     }
@@ -181,7 +181,7 @@ getSyntaxCategory(const Record &Def) {
 
 static StringRef getTokenSpelling(const Record &TokenRec) {
   assert(isToken(TokenRec));
-  for (const auto Field : TokenRec.getValues()) {
+  for (const auto &Field : TokenRec.getValues()) {
     if (Field.getName() == "Spelling") {
       return Field.getValue()->getAsUnquotedString();
     }
@@ -249,7 +249,7 @@ static bool categoryIsInSyntaxHierarchy() {
 static std::vector<RecordVal> getChildrenOf(const Record &Node) {
   std::vector<RecordVal> Children;
   
-  for (const auto Child : Node.getValues()) {
+  for (const auto &Child : Node.getValues()) {
     if (auto ChildRec = getChildRecord(Child)) {
       if (!isLayout(*ChildRec)) {
         continue;
@@ -287,7 +287,7 @@ getRecordsReferencedByCategory(const std::string &Category) {
   std::set<const Record *> ReferencedRecords;
   auto Nodes = getRecordsForCategory(Category);
   for (const auto *Node : Nodes) {
-    for (const auto Child : getChildrenOf(*Node)) {
+    for (const auto &Child : getChildrenOf(*Node)) {
       const auto &ChildType = getLayoutNodeRecord(Child);
       if (isToken(ChildType)) {
         continue;
@@ -432,13 +432,53 @@ public:
   SwiftSyntaxGenerator(raw_ostream &OS):
     SyntaxImplementationGenerator(OS, TargetLanguage::Swift) {}
 
+
+  std::string getCursorName(RecordVal &Child, bool VariableName = true) {
+    auto ChildName = Child.getName().str();
+    auto ChildRec = getLayoutNodeRecord(Child);
+    if (isToken(ChildRec)) {
+      ChildName = ChildName + "Token";
+    }
+    return VariableName ? sanitized(ChildName) : ChildName;
+  }
+
   virtual void printIncludesOfImplementation() {}
 
-  virtual bool printSyntaxInterface(const Record &Node) { return false; }
   virtual bool printSyntaxImplementation(const Record &Node) {
-    // TODO: Fill this out
+    auto ClassName = Node.getName();
+
+    OS << "public struct " << ClassName << ": _SyntaxBase {\n"
+          "  let root: SyntaxData?\n"
+          "  let data: " << ClassName << "Data\n";
+
+    for (auto Child : getChildrenOf(Node)) {
+      auto ChildName = getCursorName(Child);
+      auto ChildType = getLayoutNodeRecord(Child);
+      auto ChildTypeName = getChildTypeName(ChildType);
+
+      // Getter
+      OS << "  public var " << ChildName << ": " << ChildTypeName << " {\n"
+            "    return " << ChildTypeName << "(root: validRoot, data: data." << ChildName << ")\n"
+            "  }\n\n";
+
+      // Setter
+      auto NewChildParam = "new" + Child.getName();
+      OS << "  public func with" << Child.getName() << "(_ " << NewChildParam
+         << ": " << ChildTypeName << ") -> " << ChildTypeName << " {\n";
+      if (isToken(ChildType)) {
+        auto RawNewChild = NewChildParam.str() + ".data.raw";
+        printTokenAssertion(RawNewChild, ChildType);
+      }
+      OS << "    let (root, newData) = data.replacingChild(" << NewChildParam << ".data.raw,\n"
+            "                                              at: Data.Cursor." << ChildName << ")\n"
+            "    return " << ClassName << "(root: root, data: newData as! Data)\n";
+      OS << "  }\n\n";
+    }
+
+    OS << "}\n\n";
     return false;
   }
+
   virtual bool printSyntaxFactoryInterface() { return false; }
   virtual bool printSyntaxFactoryImplementation() {
     // TODO: Fill this out
@@ -483,16 +523,6 @@ public:
     OS << "/// MARK: " << Mark << "\n\n";
   }
 
-  std::string getCursorName(RecordVal &Child, bool VariableName = true) {
-    auto ChildName = Child.getName().str();
-    auto ChildRec = getLayoutNodeRecord(Child);
-    if (isToken(ChildRec)) {
-      ChildName = ChildName + "Token";
-    }
-    return VariableName ? sanitized(ChildName) : ChildName;
-  }
-
-  virtual bool printSyntaxDataInterface(const Record &Node) { return false; }
   virtual bool printSyntaxDataImplementation(const Record &Node) {
     auto ClassName = Node.getName();
     auto Kind = stripSyntaxSuffix(ClassName);
@@ -509,9 +539,9 @@ public:
     for (auto Child : getChildrenOf(Node)) {
       auto ChildName = getCursorName(Child);
       auto ChildClassName = getCursorName(Child, /*VariableName=*/false);
-      OS << "  private var _" << ChildName << "Cache: ThreadSafeCache<"
+      OS << "  private var _" << ChildName << "Cache: AtomicCache<"
          << ChildClassName << "SyntaxData>!\n";
-      OS << "  var " << ChildName << ": " << ChildClassName << "Syntax {\n"
+      OS << "  var " << ChildName << ": " << ChildClassName << "SyntaxData {\n"
          << "    return _" << ChildName << "Cache.value\n"
          << "  }\n\n";
     }
@@ -531,7 +561,7 @@ public:
       } else {
         printSyntaxAssertion(ChildVariable, Child);
       }
-      OS << "    _" << ChildName << "Cache = ThreadSafeCache(lock: lock) {\n"
+      OS << "    _" << ChildName << "Cache = AtomicCache {\n"
          << "      return self.realizeChild(Cursor." << ChildName << ")\n"
          << "    }\n";
     }
@@ -541,7 +571,7 @@ public:
     OS << "  static func blank() -> " << DataClassName << " {\n"
           "    let raw = RawSyntax(kind: ." << sanitized(Kind) << ",\n"
           "                        layout: [\n";
-    for (const auto Child : getChildrenOf(Node)) {
+    for (const auto &Child : getChildrenOf(Node)) {
       auto ChildType = getLayoutNodeRecord(Child);
       if (isToken(ChildType)) {
         auto ChildRec = getLayoutNodeRecord(Child);
@@ -559,7 +589,7 @@ public:
           "  }\n\n";
 
     OS << "  enum Cursor: Int {\n";
-    for (const auto Cursor : CursorNames) {
+    for (const auto &Cursor : CursorNames) {
       OS << "    case " << Cursor << "\n";
     }
     OS << "  }\n";
@@ -758,7 +788,7 @@ public:
     auto ClassName = Node.getName().str();
     auto Kind = stripSyntaxSuffix(ClassName).str();
     llvm::errs() << ClassName << "supers:\n";
-    for (const auto Super : Node.getSuperClasses()) {
+    for (const auto &Super : Node.getSuperClasses()) {
       llvm::errs() << Super.first->getName() << "\n";
     }
     auto SuperclassName = Node.getSuperClasses().back().first->getName().str();
@@ -790,7 +820,7 @@ public:
 
     if (!getChildrenOf(Node).empty()) {
       OS << "  enum class Cursor : CursorIndex {\n";
-      for (const auto Child : getChildrenOf(Node)) {
+      for (const auto &Child : getChildrenOf(Node)) {
         OS << "    " << Child.getName() << ",\n";
       }
       OS << "  };\n";
@@ -800,7 +830,7 @@ public:
     "  " << ClassName << "(RC<SyntaxData> Root, const DataType* Data)\n"
     "    : " << SuperclassName << "(Root, Data) {}\n"
     "public:\n";
-    for (const auto Child : getChildrenOf(Node)) {
+    for (const auto &Child : getChildrenOf(Node)) {
       auto ChildType = getLayoutNodeRecord(Child);
       auto ChildTypeName = getChildTypeName(ChildType);
       OS << "  " << ChildTypeName << " get" << Child.getName() << "() const;\n";
@@ -875,7 +905,7 @@ public:
     "  friend class " << ClassName << ";\n\n";
 
     // Private, cached RC<*SyntaxData> members
-    for (const auto Child : getChildrenOf(Node)) {
+    for (const auto &Child : getChildrenOf(Node)) {
       auto ChildType = getLayoutNodeRecord(Child);
       auto ChildTypeName = getChildTypeName(ChildType) + "Data";
       OS << "  RC<" << ChildTypeName << "> Cached" << Child.getName() << ";\n";
@@ -920,7 +950,7 @@ public:
     "  : " << DataSuperclassName << "(Raw, Data, IndexInParent) {\n"
     "  assert(Raw->Kind == SyntaxKind::" << Kind << ");\n"
     "  assert(Raw->Layout.size() == " << getChildrenOf(Node).size() << ");\n";
-    for (const auto Child : getChildrenOf(Node)) {
+    for (const auto &Child : getChildrenOf(Node)) {
       auto ChildName = Child.getName();
       auto ChildType = getLayoutNodeRecord(Child);
       auto ChildVariable = "Raw->getChild(" + ClassName + "::Cursor::" +
@@ -947,7 +977,7 @@ public:
     DataClassName << "::makeBlank() {\n"
     "  return make(RawSyntax::make(SyntaxKind::" << Kind << ",\n"
     "  {\n";
-    for (const auto Child : getChildrenOf(Node)) {
+    for (const auto &Child : getChildrenOf(Node)) {
       auto ChildType = getLayoutNodeRecord(Child);
       if (isToken(ChildType)) {
         auto ChildRec = getLayoutNodeRecord(Child);
@@ -1089,6 +1119,7 @@ void printSwiftEnum(raw_ostream &os, StringRef name,
 }
 
 int main(int argc, char **argv) {
+  /*
   printSwiftEnum(llvm::outs(), "TokenKind",
                  EnumGenerateFlags::Text | EnumGenerateFlags::Equals,
   {
@@ -1101,7 +1132,6 @@ int main(int argc, char **argv) {
 #define SIL_PUNCTUATOR(Id, Text) // Ignoring SIL punctuator
 #include "swift/Syntax/TokenKinds.def"
   },
-  /* string containing */
   {
    "identifier",
    "integerLiteral",
@@ -1114,7 +1144,6 @@ int main(int argc, char **argv) {
    "stringLiteral",
    "comment",
   },
-  /* text values */
   {
     "eof",
 #define KEYWORD(Id) #Id,
@@ -1125,7 +1154,6 @@ int main(int argc, char **argv) {
 #define SIL_PUNCTUATOR(Id, Text) // Ignoring SIL punctuator
 #include "swift/Syntax/TokenKinds.def"
   });
-  /*
   printSwiftEnum(llvm::outs(), "SyntaxKind", EnumGenerateFlags::Base, {
     "Token",
     "Unknown",
@@ -1133,7 +1161,7 @@ int main(int argc, char **argv) {
 #define SYNTAX_COLLECTION(Id, Element) #Id,
 #define MISSING_SYNTAX(Id, Parent) #Id,
 #include "swift/Syntax/SyntaxKinds.def"
-   })
+   });
    */
   sys::PrintStackTraceOnErrorSignal(argv[0]);
   cl::ParseCommandLineOptions(argc, argv);
