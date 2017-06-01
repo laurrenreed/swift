@@ -8,7 +8,9 @@ def GenericArgumentClauseElementSyntax : Syntax {
   Layout GenericArgument = Layout<AnyTypeSyntax>;
   Layout Comma = Layout<CommaTokenSyntax>;
 }
+
 def GenericArgumentClauseSyntax : SyntaxCollection<GenericArgumentClauseElementSyntax>;
+
 def TypeIdentifierSyntax : Syntax {
   Layout TypeName = Layout<IdentifierTokenSyntax>;
   Layout GenericArgumentClause = Layout<GenericArgumentClauseSyntax>;

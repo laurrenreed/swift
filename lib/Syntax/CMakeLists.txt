@@ -13,6 +13,15 @@ foreach(category ${SYNTAX_GEN_CATEGORIES})
   list(APPEND generated_sources "${out_filename}")
 endforeach()
 
+foreach(category ${SYNTAX_GEN_CATEGORIES})
+  set(syntax_gen_output_dir "/Users/harlan/Desktop/")
+  set(out_filename)
+  swift_add_syntax_generated_source(${category}
+    OUTPUT_DIR ${syntax_gen_output_dir}
+    ACTION implementation
+    TARGET_LANGUAGE swift)
+endforeach()
+
 add_swift_library(swiftSyntax STATIC
   ${generated_sources}
   TokenSyntax.cpp

@@ -24,6 +24,7 @@ enum class Category {
   ExprSyntax,
   StmtSyntax,
   TypeSyntax,
+  TokenSyntax,
   PatternSyntax,
   GenericSyntax,
   AttributeSyntax,
@@ -117,7 +118,7 @@ static bool isLayout(const Record &Rec) {
 
 /// For a given child value of Layout<T>, return the record for T, which
 /// represents a concrete definition of a syntax node.
-static const Record *getChildRecord(const RecordVal Child) {
+static const Record *getChildRecord(const RecordVal &Child) {
   if (const auto *DI = dyn_cast<DefInit>(Child.getValue())) {
     return DI->getDef();
   }
@@ -144,7 +145,7 @@ static const Record &getLayoutNodeRecord(const Record &Rec) {
   return *getChildRecord(NodeField);
 }
 
-static const Record &getLayoutNodeRecord(const RecordVal Child) {
+static const Record &getLayoutNodeRecord(const RecordVal &Child) {
   return getLayoutNodeRecord(*getChildRecord(Child));
 }
 
@@ -171,6 +172,10 @@ static const StringRef getChildTypeName(const Record &Rec) {
 
 static const Record &
 getSyntaxCategory(const Record &Def) {
+  if (isLayout(Def)) {
+    auto LayoutNode = Def.getValue("Node");
+    return *getChildRecord(*LayoutNode);
+  }
   for (const auto &Super : Def.getSuperClasses()) {
     if (SyntaxCategories.count(Super.first)) {
       return *Super.first;
@@ -197,8 +202,12 @@ static StringRef stripSyntaxSuffix(StringRef TypeName) {
   return TypeName.slice(0, Pos);
 }
 
-static std::string getMissingSyntaxKind(const RecordVal Child) {
+static std::string getMissingSyntaxKind(const RecordVal &Child) {
   // TODO
+  if (auto Rec = getChildRecord(Child)) {
+    std::string Name = stripSyntaxSuffix(getSyntaxCategory(*Rec).getName());
+    return "Missing" + Name;
+  }
   return "Missing";
 }
 
@@ -208,6 +217,7 @@ static Category getCategory() {
   .Case("ExprSyntax", Category::ExprSyntax)
   .Case("StmtSyntax", Category::StmtSyntax)
   .Case("TypeSyntax", Category::TypeSyntax)
+  .Case("TokenSyntax", Category::TokenSyntax)
   .Case("PatternSyntax", Category::PatternSyntax)
   .Case("GenericSyntax", Category::GenericSyntax)
   .Case("AttributeSyntax", Category::AttributeSyntax)
@@ -382,6 +392,7 @@ public:
       case Category::PatternSyntax:
       case Category::GenericSyntax:
       case Category::AttributeSyntax:
+      case Category::TokenSyntax:
       case Category::CommonSyntax:
         return printSyntaxInterfaces();
         break;
@@ -407,6 +418,7 @@ public:
       case Category::PatternSyntax:
       case Category::GenericSyntax:
       case Category::AttributeSyntax:
+      case Category::TokenSyntax:
       case Category::CommonSyntax:
         return printSyntaxImplementations();
       case Category::SyntaxFactory:
@@ -433,7 +445,7 @@ public:
     SyntaxImplementationGenerator(OS, TargetLanguage::Swift) {}
 
 
-  std::string getCursorName(RecordVal &Child, bool VariableName = true) {
+  std::string getCursorName(const RecordVal &Child, bool VariableName = true) {
     auto ChildName = Child.getName().str();
     auto ChildRec = getLayoutNodeRecord(Child);
     if (isToken(ChildRec)) {
@@ -446,13 +458,20 @@ public:
 
   virtual bool printSyntaxImplementation(const Record &Node) {
     auto ClassName = Node.getName();
+    llvm::SmallVector<std::string, 10> CursorNames;
 
-    OS << "public struct " << ClassName << ": _SyntaxBase {\n"
-          "  let root: SyntaxData?\n"
-          "  let data: " << ClassName << "Data\n";
-
+    OS << "public class " << ClassName << ": Syntax {\n"
+          "  var data: " << ClassName << "Data {\n"
+          "    return _data as! " << ClassName << "Data\n"
+          "  }\n\n";
+    OS << "  public static func blank() -> " << ClassName << " {\n"
+          "    return " << ClassName << "(root: nil, data: " << ClassName << "Data.blank())\n"
+          "  }\n\n";
     for (auto Child : getChildrenOf(Node)) {
       auto ChildName = getCursorName(Child);
+      CursorNames.emplace_back(ChildName);
+      
+      auto ChildCapName = getCursorName(Child, /*isVariable*/ false);
       auto ChildType = getLayoutNodeRecord(Child);
       auto ChildTypeName = getChildTypeName(ChildType);
 
@@ -462,19 +481,38 @@ public:
             "  }\n\n";
 
       // Setter
-      auto NewChildParam = "new" + Child.getName();
-      OS << "  public func with" << Child.getName() << "(_ " << NewChildParam
-         << ": " << ChildTypeName << ") -> " << ChildTypeName << " {\n";
+      auto NewChildParam = "new" + ChildCapName;
+      OS << "  public func with" << ChildCapName << "(_ " << NewChildParam
+         << ": " << ChildTypeName << ") -> " << ClassName << " {\n";
       if (isToken(ChildType)) {
-        auto RawNewChild = NewChildParam.str() + ".data.raw";
+        auto RawNewChild = NewChildParam + ".data.raw";
         printTokenAssertion(RawNewChild, ChildType);
       }
-      OS << "    let (root, newData) = data.replacingChild(" << NewChildParam << ".data.raw,\n"
-            "                                              at: Data.Cursor." << ChildName << ")\n"
-            "    return " << ClassName << "(root: root, data: newData as! Data)\n";
+      OS << "    let (root, newData) = data.replacingChild(" << NewChildParam << "._data.raw,\n"
+            "                                              at: " << ClassName << "Data.Cursor." << ChildName << ")\n"
+            "    return " << ClassName << "(root: root, data: newData)\n";
       OS << "  }\n\n";
     }
-
+    
+    // Create a class create() method to avoid a required initializer that would
+    // expose SyntaxData.
+    OS << "  override class func create(root: SyntaxData?, data: SyntaxData) -> Syntax {\n"
+          "    return .init(root: root, data: data)\n"
+          "  }\n\n";
+    
+    if (!CursorNames.empty()) {
+      // Create an accessor for the child at a given index.
+      OS << "  override func child(at index: Int) -> SyntaxData? {\n"
+            "    guard let cursor = " << ClassName << "Data.Cursor(rawValue: index) else {\n"
+            "      return nil\n"
+            "    }\n\n"
+            "    switch cursor {\n";
+      for (const auto &Cursor : CursorNames) {
+        OS << "    case ." << Cursor << ": return " << Cursor << "\n";
+      }
+      OS << "    }\n"
+            "  }\n\n";
+    }
     OS << "}\n\n";
     return false;
   }
@@ -538,22 +576,24 @@ public:
     // Caches for variables
     for (auto Child : getChildrenOf(Node)) {
       auto ChildName = getCursorName(Child);
+      CursorNames.emplace_back(ChildName);
       auto ChildClassName = getCursorName(Child, /*VariableName=*/false);
-      OS << "  private var _" << ChildName << "Cache: AtomicCache<"
-         << ChildClassName << "SyntaxData>!\n";
+      OS << "  private var _" << ChildName << "Cache = AtomicCache<"
+         << ChildClassName << "SyntaxData>()\n";
       OS << "  var " << ChildName << ": " << ChildClassName << "SyntaxData {\n"
-         << "    return _" << ChildName << "Cache.value\n"
+         << "    return _" << ChildName << "Cache.value {\n"
+         << "      realizeChild(Cursor." << ChildName << ")\n"
+         << "    }\n"
          << "  }\n\n";
     }
 
     // required initializer
-    OS << "  required init(raw: RawSyntaxProtocol, indexInParent: Int, parent: SyntaxData?) {\n"
+    OS << "  override required init(raw: RawSyntaxProtocol, indexInParent: Int, parent: SyntaxData?) {\n"
           "    super.init(raw: raw, indexInParent: indexInParent, parent: parent)\n"
           "    precondition(raw.kind == ." << KindEnumCase << ")\n"
           "    precondition(raw.layout.count == " << getChildrenOf(Node).size() << ")\n";
     for (auto Child : getChildrenOf(Node)) {
       auto ChildName = getCursorName(Child);
-      CursorNames.emplace_back(ChildName);
       auto ChildType = getLayoutNodeRecord(Child);
       auto ChildVariable = "raw[Cursor." + ChildName + "]";
       if (isToken(ChildType)) {
@@ -561,38 +601,40 @@ public:
       } else {
         printSyntaxAssertion(ChildVariable, Child);
       }
-      OS << "    _" << ChildName << "Cache = AtomicCache {\n"
-         << "      return self.realizeChild(Cursor." << ChildName << ")\n"
-         << "    }\n";
     }
     OS << "  }\n\n";
-
-    // static func blank()
-    OS << "  static func blank() -> " << DataClassName << " {\n"
+    
+    // Define "blank" constructor -- a version of this Data node with missing
+    // raw syntax nodes for all children.
+    OS << "  override class func blank() -> " << DataClassName << " {\n"
           "    let raw = RawSyntax(kind: ." << sanitized(Kind) << ",\n"
           "                        layout: [\n";
     for (const auto &Child : getChildrenOf(Node)) {
       auto ChildType = getLayoutNodeRecord(Child);
+      auto ChildName = getCursorName(Child);
       if (isToken(ChildType)) {
         auto ChildRec = getLayoutNodeRecord(Child);
         auto TokenKind = ChildRec.getValueAsString("Kind");
         auto TokenSpelling = ChildRec.getValueAsString("Spelling");
         OS << "                          RawTokenSyntax.missing(." << sanitized(TokenKind) << ", text: \"" << TokenSpelling << "\"),\n";
       } else {
-        auto ChildKind = getMissingSyntaxKind(Child);
-        OS << "                          RawSyntax.missing(." << sanitized(ChildKind) << "),\n";
+        OS << "                          RawSyntax.missing(." << ChildName << "),\n";
       }
     }
     OS << "                        ],\n"
           "                        presence: .present)\n"
           "    return " << DataClassName << "(raw: raw, indexInParent: 0, parent: nil)\n"
           "  }\n\n";
-
-    OS << "  enum Cursor: Int {\n";
-    for (const auto &Cursor : CursorNames) {
-      OS << "    case " << Cursor << "\n";
+    
+    if (!CursorNames.empty()) {
+      // Define a "cursor" that we can use to "safely" access the children
+      // of this data class.
+      OS << "  enum Cursor: Int {\n";
+      for (const auto &Cursor : CursorNames) {
+        OS << "    case " << Cursor << "\n";
+      }
+      OS << "  }\n";
     }
-    OS << "  }\n";
 
     OS << "}\n\n";
 

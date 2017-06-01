@@ -19,7 +19,7 @@ def IsTokenSyntax : Keyword<"is", "kw_is">;
 def LetTokenSyntax : Keyword<"let", "kw_let">;
 def RepeatTokenSyntax : Keyword<"repeat", "kw_repeat">;
 def ReturnTokenSyntax : Keyword<"return", "kw_return">;
-def SwitchTokenSyntax : Keyword<"swift", "kw_switch">;
+def SwitchTokenSyntax : Keyword<"switch", "kw_switch">;
 def ThrowTokenSyntax : Keyword<"throw", "kw_throw">;
 def TryTokenSyntax : Keyword<"try", "kw_try">;
 def VarTokenSyntax : Keyword<"var", "kw_var">;

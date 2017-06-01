@@ -29,6 +29,7 @@ def PlatformVersionSyntax : Syntax {
   Layout BugfixPeriod = Layout<PeriodTokenSyntax>;
   Layout BugfixVersion = Layout<IntegerLiteralTokenSyntax>;
 }
+
 def AvailabilityArgumentSyntax : Syntax {
   // FIXME: whitelist?
   Layout PlatformName = Layout<IdentifierTokenSyntax>;
