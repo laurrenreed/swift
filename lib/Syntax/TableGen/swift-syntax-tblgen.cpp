@@ -461,11 +461,13 @@ public:
     llvm::SmallVector<std::string, 10> CursorNames;
 
     OS << "public class " << ClassName << ": Syntax {\n"
-          "  var data: " << ClassName << "Data {\n"
-          "    return _data as! " << ClassName << "Data\n"
-          "  }\n\n";
-    OS << "  public static func blank() -> " << ClassName << " {\n"
-          "    return " << ClassName << "(root: nil, data: " << ClassName << "Data.blank())\n"
+          "  private var data: " << ClassName << "Data {\n"
+          "    return unsafeDowncast(_data, to: " << ClassName << "Data.self)\n"
+          "  }\n\n"
+          // Create a class var override for the data type underlying
+          // this syntax node.
+          "  override class var dataType: SyntaxData.Type {\n"
+          "    return " << ClassName << "Data.self\n"
           "  }\n\n";
     for (auto Child : getChildrenOf(Node)) {
       auto ChildName = getCursorName(Child);
@@ -488,7 +490,7 @@ public:
         auto RawNewChild = NewChildParam + ".data.raw";
         printTokenAssertion(RawNewChild, ChildType);
       }
-      OS << "    let (root, newData) = data.replacingChild(" << NewChildParam << "._data.raw,\n"
+      OS << "    let (root, newData) = data.replacingChild(" << NewChildParam << ".raw,\n"
             "                                              at: " << ClassName << "Data.Cursor." << ChildName << ")\n"
             "    return " << ClassName << "(root: root, data: newData)\n";
       OS << "  }\n\n";
@@ -496,7 +498,7 @@ public:
     
     // Create a class create() method to avoid a required initializer that would
     // expose SyntaxData.
-    OS << "  override class func create(root: SyntaxData?, data: SyntaxData) -> Syntax {\n"
+    OS << "  override class func create(root: SyntaxData?, data: SyntaxData) -> Self {\n"
           "    return .init(root: root, data: data)\n"
           "  }\n\n";
     
