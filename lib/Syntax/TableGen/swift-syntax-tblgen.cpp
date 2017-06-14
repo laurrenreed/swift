@@ -1106,7 +1106,8 @@ static bool SyntaxTableGenMain(raw_ostream &OS, RecordKeeper &Records) {
 enum EnumGenerateFlags: uint8_t {
   Base = 0,
   Text = 1 << 0,
-  Equals = 1 << 1
+  Equals = 1 << 1,
+  Codable = 1 << 2,
 };
 
 std::string escaped(StringRef str) {
@@ -1121,7 +1122,11 @@ void printSwiftEnum(raw_ostream &os, StringRef name,
                     ArrayRef<StringRef> vals,
                     ArrayRef<StringRef> stringContaining = {},
                     ArrayRef<StringRef> texts = {}) {
-  os << "public enum " << name.str() << " {\n";
+  os << "public enum " << name.str();
+  if (Flags & EnumGenerateFlags::Codable) {
+    os << ": Codable";
+  }
+  os << " {\n";
   for (auto name : stringContaining) {
     os << "  case " << name << "(String)\n";
   }
@@ -1137,6 +1142,43 @@ void printSwiftEnum(raw_ostream &os, StringRef name,
     for (size_t i = 0; i < texts.size(); i += 1) {
       auto text = escaped(texts[i]);
       os << "    case ." << vals[i] << ": return \"" << text << "\"\n";
+    }
+    os << "    }\n"
+          "  }\n\n";
+  }
+  if (Flags & EnumGenerateFlags::Codable) {
+    os << "  enum CodingKeys: String, CodingKey {\n"
+          "    case kind, text\n"
+          "  }\n\n";
+    os << "  public init(from decoder: Decoder) throws {\n"
+          "    let container = try decoder.container(keyedBy: CodingKeys.self)\n"
+          "    let kind = try container.decode(String.self, forKey: .kind)\n"
+          "    switch kind {\n";
+    for (auto name : vals) {
+      os << "    case \"" << name << "\": self = ." << name << "\n";
+    }
+    for (auto name : stringContaining) {
+      os << "    case \"" << name << "\":\n"
+            "      let text = try container.decode(String.self, forKey: .text)\n"
+            "      self = ." << name << "(text)\n";
+    }
+    os << "    default: fatalError(\"unknown token kind \\(kind)\")\n"
+          "    }\n"
+          "  }\n\n";
+    
+    os << "  public func encode(to encoder: Encoder) throws {\n"
+          "    var container = encoder.container(keyedBy: CodingKeys.self)\n"
+          "    try container.encode(kind, forKey: .kind)\n"
+          "    try container.encode(text, forKey: .text)\n"
+          "  }\n\n";
+    
+    os << "  var kind: String {\n"
+          "    switch self {\n";
+    for (auto name : vals) {
+      os << "    case ." << name << ": return \"" << name << "\"\n";
+    }
+    for (auto name : stringContaining) {
+      os << "    case ." << name << "(_): return \"" << name << "\"\n";
     }
     os << "    }\n"
           "  }\n";
@@ -1163,14 +1205,15 @@ void printSwiftEnum(raw_ostream &os, StringRef name,
 }
 
 int main(int argc, char **argv) {
-  /*
   printSwiftEnum(llvm::outs(), "TokenKind",
-                 EnumGenerateFlags::Text | EnumGenerateFlags::Equals,
+                 EnumGenerateFlags::Text |
+                 EnumGenerateFlags::Equals |
+                 EnumGenerateFlags::Codable,
   {
     "eof",
-#define KEYWORD(Id) #Id "Keyword",
+#define KEYWORD(Id) "kw_" #Id,
 #define PUNCTUATOR(Id, Text) #Id,
-#define POUND_KEYWORD(Id) "pound" #Id,
+#define POUND_KEYWORD(Id) "pound_" #Id,
 #define POUND_OLD_OBJECT_LITERAL(Id, A, B, C) // Ignoring old object literal syntax
 #define SIL_KEYWORD(Id) // Ignoring SIL keyword
 #define SIL_PUNCTUATOR(Id, Text) // Ignoring SIL punctuator
@@ -1206,7 +1249,7 @@ int main(int argc, char **argv) {
 #define MISSING_SYNTAX(Id, Parent) #Id,
 #include "swift/Syntax/SyntaxKinds.def"
    });
-   */
+   
   sys::PrintStackTraceOnErrorSignal(argv[0]);
   cl::ParseCommandLineOptions(argc, argv);
   if (getCategory() == Category::Unknown) {
