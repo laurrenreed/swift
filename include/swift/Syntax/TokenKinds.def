@@ -111,13 +111,15 @@
 #endif
 
 /// LITERAL(name)
-///   Tokens representing literal values, e.g. 'integer_literal'.
+///   Tokens that represent single-token literals.
 #ifndef LITERAL
 #define LITERAL(name)
 #endif
 
 /// MISC(name)
-///   Miscellaneous tokens, e.g. 'eof' and 'unknown'.
+///   Miscellaneous Swift tokens.
+///   \param name  The symbolic name of the token, such as
+///                'unknown' or 'eof'.
 #ifndef MISC
 #define MISC(name)
 #endif
@@ -267,22 +269,21 @@ POUND_KEYWORD(column)
 POUND_KEYWORD(function)
 POUND_KEYWORD(dsohandle)
 
-// Single-token literals
+// Literal tokens
 LITERAL(integer_literal)
 LITERAL(floating_literal)
-LITERAL(string_literal)
+LITERAL(string_litera)
 
-// Miscellaneous tokens.
+// Miscellaneous tokens
 MISC(unknown)
 MISC(eof)
 MISC(code_complete)
 MISC(identifier)
-MISC(oper_binary_unspaced)   // "x+y"
-MISC(oper_binary_spaced)     // "x + y"
+MISC(oper_binary_unspaced)
+MISC(oper_binary_spaced)
 MISC(oper_postfix)
 MISC(oper_prefix)
 MISC(dollarident)
-MISC(sil_local_name)       // %42 in SIL mode.
 MISC(comment)
 
 #undef KEYWORD

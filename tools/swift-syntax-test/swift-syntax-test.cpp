@@ -250,6 +250,73 @@ int doSerializeRawTree(const char *MainExecutablePath,
   for (auto &Decl : TopLevelDecls) {
     RawTopLevelDecls.push_back(Decl.getRaw());
   }
+  out << RawTopLevelDecls;
+  out << "\n";
+
+  return EXIT_SUCCESS;
+}
+
+int doFullLexRoundTrip(const StringRef InputFilename) {
+  LangOptions LangOpts;
+  SourceManager SourceMgr;
+  DiagnosticEngine Diags(SourceMgr);
+  PrintingDiagnosticConsumer DiagPrinter;
+  Diags.addConsumer(DiagPrinter);
+
+  std::vector<std::pair<RC<syntax::RawTokenSyntax>,
+                                   syntax::AbsolutePosition>> Tokens;
+  if (getTokensFromFile(InputFilename, LangOpts, SourceMgr,
+                        Diags, Tokens) == EXIT_FAILURE) {
+    return EXIT_FAILURE;
+  }
+
+  for (auto TokAndPos : Tokens) {
+    TokAndPos.first->print(llvm::outs());
+  }
+
+  return Diags.hadAnyError() ? EXIT_FAILURE : EXIT_SUCCESS;
+}
+
+int doDumpTokenSyntax(const StringRef InputFilename) {
+  LangOptions LangOpts;
+  SourceManager SourceMgr;
+  DiagnosticEngine Diags(SourceMgr);
+  PrintingDiagnosticConsumer DiagPrinter;
+  Diags.addConsumer(DiagPrinter);
+  
+  
+  std::vector<std::pair<RC<syntax::RawTokenSyntax>,
+  syntax::AbsolutePosition>> Tokens;
+  if (getTokensFromFile(InputFilename, LangOpts, SourceMgr,
+                        Diags, Tokens) == EXIT_FAILURE) {
+    return EXIT_FAILURE;
+  }
+  
+  for (auto TokAndPos : Tokens) {
+    TokAndPos.second.printLineAndColumn(llvm::outs());
+    llvm::outs() << "\n";
+    TokAndPos.first->dump(llvm::outs());
+    llvm::outs() << "\n";
+  }
+  
+  return Diags.hadAnyError() ? EXIT_FAILURE : EXIT_SUCCESS;
+}
+
+int doFullParseRoundTrip(const StringRef InputFilename) {
+  
+  llvm::SmallVector<syntax::Syntax, 10> TopLevelDecls;
+  std::vector<std::pair<RC<syntax::RawTokenSyntax>,
+              syntax::AbsolutePosition>> Tokens;
+  
+  getSyntaxTree(InputFilename, TopLevelDecls, Tokens);
+  
+  for (auto &Node : TopLevelDecls) {
+    Node.print(llvm::outs());
+  }
+  
+  if (Tokens.back().first->getTokenKind() == tok::eof) {
+    Tokens.back().first->print(llvm::outs());
+  }
 
   swift::json::Output out(llvm::outs());
   out << RawTopLevelDecls;
@@ -286,6 +353,9 @@ int main(int argc, char *argv[]) {
     break;
   case ActionType::SerializeRawTree:
     ExitCode = doSerializeRawTree(argv[0], options::InputSourceFilename);
+    break;
+  case ActionType::SerializeRawTree:
+    ExitCode = doSerializeRawTree(options::InputSourceFilename);
     break;
   case ActionType::None:
     llvm::errs() << "an action is required\n";

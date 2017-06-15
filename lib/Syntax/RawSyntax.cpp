@@ -14,6 +14,7 @@
 #include "swift/Syntax/TokenSyntax.h"
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/raw_ostream.h"
+#include "swift/Basic/StringExtras.h"
 
 #include <algorithm>
 

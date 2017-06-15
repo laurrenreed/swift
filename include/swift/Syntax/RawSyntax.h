@@ -29,6 +29,7 @@
 #ifndef SWIFT_SYNTAX_RAWSYNTAX_H
 #define SWIFT_SYNTAX_RAWSYNTAX_H
 
+#include "swift/Basic/JSONSerialization.h"
 #include "swift/Syntax/References.h"
 #include "swift/Syntax/Trivia.h"
 #include "llvm/ADT/IntrusiveRefCntPtr.h"
@@ -295,8 +296,9 @@ private:
   bool accumulateAbsolutePosition(AbsolutePosition &Pos,
                                   const RawSyntax *UpToTargetNode) const;
 };
-
+  
 } // end namespace syntax
+  
 } // end namespace swift
 
 #endif // SWIFT_SYNTAX_RAWSYNTAX_H

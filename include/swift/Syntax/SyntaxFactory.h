@@ -42,7 +42,7 @@ class DeclSyntax;
 class ExprSyntax;
 class StmtSyntax;
 class UnknownSyntax;
-struct RawTokenSyntax;
+class TokenSyntax;
 
 /// The Syntax factory - the one-stop shop for making new Syntax nodes.
 struct SyntaxFactory {

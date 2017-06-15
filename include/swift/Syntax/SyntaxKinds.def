@@ -74,6 +74,7 @@ SYNTAX_RANGE(Type, MissingType, FunctionType)
 // Statements
 
 ABSTRACT_SYNTAX(StmtSyntax, Syntax)
+  MISSING_SYNTAX(MissingStmt, StmtSyntax)
   SYNTAX(UnknownStmt, StmtSyntax)
   SYNTAX(BreakStmt, StmtSyntax)
   SYNTAX(CodeBlockStmt, StmtSyntax)
