@@ -266,7 +266,7 @@ static bool categoryIsInSyntaxHierarchy() {
 
 static std::vector<RecordVal> getChildrenOf(const Record &Node) {
   std::vector<RecordVal> Children;
-  
+
   for (const auto &Child : Node.getValues()) {
     if (auto ChildRec = getChildRecord(Child)) {
       if (!isLayout(*ChildRec)) {
@@ -275,7 +275,7 @@ static std::vector<RecordVal> getChildrenOf(const Record &Node) {
       Children.push_back(Child);
     }
   }
-  
+
   return Children;
 }
 
@@ -463,7 +463,7 @@ public:
   }
 
   virtual void printIncludesOfImplementation() {}
-  
+
   void printSwiftSyntaxKindEnum() {
     auto names = {
         "Token",
@@ -483,7 +483,7 @@ public:
           "  }\n"
           "}\n\n";
   }
-  
+
   void printSwiftTokenKindEnum() {
     auto stringContaining = {
       "identifier",
@@ -543,13 +543,13 @@ public:
     OS << "    default: fatalError(\"unknown token kind \\(kind)\")\n"
     "    }\n"
     "  }\n\n";
-    
+
     OS << "  public func encode(to encoder: Encoder) throws {\n"
     "    var container = encoder.container(keyedBy: CodingKeys.self)\n"
     "    try container.encode(kind, forKey: .kind)\n"
     "    try container.encode(text, forKey: .text)\n"
     "  }\n\n";
-    
+
     OS << "  var kind: String {\n"
     "    switch self {\n";
     for (auto pair : vals) {
@@ -561,7 +561,7 @@ public:
     OS << "    }\n"
     "  }\n";
     OS << "}\n\n";
-    
+
     OS << "extension TokenKind: Equatable {\n"
     "  public static func ==(lhs: TokenKind, rhs: TokenKind) -> Bool {\n"
     "    switch (lhs, rhs) {\n";
@@ -583,26 +583,18 @@ public:
     auto ClassName = Node.getName();
     llvm::SmallVector<std::string, 10> CursorNames;
 
-    OS << "public class " << ClassName << ": Syntax {\n"
-          "  private var data: " << ClassName << "Data {\n"
-          "    return unsafeDowncast(_data, to: " << ClassName << "Data.self)\n"
-          "  }\n\n"
-          // Create a class var override for the data type underlying
-          // this syntax node.
-          "  override class var dataType: SyntaxData.Type {\n"
-          "    return " << ClassName << "Data.self\n"
-          "  }\n\n";
+    OS << "public struct " << ClassName << ": _SyntaxBase {\n";
     for (auto Child : getChildrenOf(Node)) {
       auto ChildName = getCursorName(Child);
       CursorNames.emplace_back(ChildName);
-      
+
       auto ChildCapName = getCursorName(Child, /*isVariable*/ false);
       auto ChildType = getLayoutNodeRecord(Child);
       auto ChildTypeName = getChildTypeName(ChildType);
 
       // Getter
       OS << "  public var " << ChildName << ": " << ChildTypeName << " {\n"
-            "    return " << ChildTypeName << "(root: validRoot, data: data." << ChildName << ")\n"
+            "    return " << ChildTypeName << "(root: root, data: data.cachedChild(at: Cursor." << ChildName << "))\n"
             "  }\n\n";
 
       // Setter
@@ -610,34 +602,15 @@ public:
       OS << "  public func with" << ChildCapName << "(_ " << NewChildParam
          << ": " << ChildTypeName << ") -> " << ClassName << " {\n";
       if (isToken(ChildType)) {
-        auto RawNewChild = NewChildParam + ".data.raw";
+        auto RawNewChild = NewChildParam + ".raw";
         printTokenAssertion(RawNewChild, ChildType);
       }
       OS << "    let (root, newData) = data.replacingChild(" << NewChildParam << ".raw,\n"
-            "                                              at: " << ClassName << "Data.Cursor." << ChildName << ")\n"
+            "                                              at: Cursor." << ChildName << ")\n"
             "    return " << ClassName << "(root: root, data: newData)\n";
       OS << "  }\n\n";
     }
-    
-    // Create a class create() method to avoid a required initializer that would
-    // expose SyntaxData.
-    OS << "  override class func create(root: SyntaxData?, data: SyntaxData) -> Self {\n"
-          "    return .init(root: root, data: data)\n"
-          "  }\n\n";
-    
-    if (!CursorNames.empty()) {
-      // Create an accessor for the child at a given index.
-      OS << "  override func child(at index: Int) -> SyntaxData? {\n"
-            "    guard let cursor = " << ClassName << "Data.Cursor(rawValue: index) else {\n"
-            "      return nil\n"
-            "    }\n\n"
-            "    switch cursor {\n";
-      for (const auto &Cursor : CursorNames) {
-        OS << "    case ." << Cursor << ": return " << Cursor << "\n";
-      }
-      OS << "    }\n"
-            "  }\n\n";
-    }
+
     OS << "}\n\n";
     return false;
   }
@@ -687,83 +660,6 @@ public:
   }
 
   virtual bool printSyntaxDataImplementation(const Record &Node) {
-    auto ClassName = Node.getName();
-    auto Kind = stripSyntaxSuffix(ClassName);
-    auto KindEnumCase = sanitized(Kind);
-    auto SuperclassName = Node.getSuperClasses().back().first->getName();
-    auto DataClassName = ClassName + "Data";
-    auto DataSuperclassName = SuperclassName + "Data";
-    llvm::SmallVector<std::string, 10> CursorNames;
-
-    OS << "class " << DataClassName << ": " << DataSuperclassName
-       << " {\n";
-
-    // Caches for variables
-    for (auto Child : getChildrenOf(Node)) {
-      auto ChildName = getCursorName(Child);
-      CursorNames.emplace_back(ChildName);
-      auto ChildClassName = getCursorName(Child, /*VariableName=*/false);
-      OS << "  private var _" << ChildName << "Cache = AtomicCache<"
-         << ChildClassName << "SyntaxData>()\n";
-      OS << "  var " << ChildName << ": " << ChildClassName << "SyntaxData {\n"
-         << "    return _" << ChildName << "Cache.value {\n"
-         << "      realizeChild(Cursor." << ChildName << ")\n"
-         << "    }\n"
-         << "  }\n\n";
-    }
-
-    // required initializer
-    OS << "  override required init(raw: RawSyntaxProtocol, indexInParent: Int, parent: SyntaxData?) {\n"
-          "    super.init(raw: raw, indexInParent: indexInParent, parent: parent)\n"
-          "    precondition(raw.kind == ." << KindEnumCase << ")\n"
-          "    precondition(raw.layout.count == " << getChildrenOf(Node).size() << ")\n";
-    for (auto Child : getChildrenOf(Node)) {
-      auto ChildName = getCursorName(Child);
-      auto ChildType = getLayoutNodeRecord(Child);
-      auto ChildVariable = "raw[Cursor." + ChildName + "]";
-      if (isToken(ChildType)) {
-        printTokenAssertion(ChildVariable, ChildType);
-      } else {
-        printSyntaxAssertion(ChildVariable, Child);
-      }
-    }
-    OS << "  }\n\n";
-    
-    // Define "blank" constructor -- a version of this Data node with missing
-    // raw syntax nodes for all children.
-    OS << "  override class func blank() -> " << DataClassName << " {\n"
-          "    let raw = RawSyntax(kind: ." << sanitized(Kind) << ",\n"
-          "                        layout: [\n";
-    for (const auto &Child : getChildrenOf(Node)) {
-      auto ChildType = getLayoutNodeRecord(Child);
-      auto ChildName = getCursorName(Child);
-      if (isToken(ChildType)) {
-        auto ChildRec = getLayoutNodeRecord(Child);
-        auto TokenKind = ChildRec.getValueAsString("Kind");
-        auto TokenSpelling = ChildRec.getValueAsString("Spelling");
-        OS << "                          RawTokenSyntax.missing(." << sanitized(TokenKind) << ", text: \"" << TokenSpelling << "\"),\n";
-      } else {
-        OS << "                          RawSyntax.missing(." << ChildName << "),\n";
-      }
-    }
-    OS << "                        ],\n"
-          "                        presence: .present)\n"
-          "    return " << DataClassName << "(raw: raw, indexInParent: 0, parent: nil)\n"
-          "  }\n\n";
-    
-    if (!CursorNames.empty()) {
-      // Define a "cursor" that we can use to "safely" access the children
-      // of this data class.
-      OS << "  enum Cursor: Int {\n";
-      for (const auto &Cursor : CursorNames) {
-        OS << "    case " << Cursor << "\n";
-      }
-      OS << "  }\n";
-    }
-
-    OS << "}\n\n";
-
-    return false;
   }
 
   ~SwiftSyntaxGenerator() {}
@@ -947,7 +843,7 @@ public:
     Namespaces NS { OS, *this };
 
     SyntaxImplementationGenerator::printSyntaxInterfaces();
-    
+
     return false;
   }
 
@@ -1010,11 +906,11 @@ public:
     } else {
       OS << "    return S->getKind() == SyntaxKind::" << Kind << ";\n";
     }
-    
+
     OS <<
     "  }\n"
     "};\n\n";
-    
+
     return false;
   }
 
@@ -1096,7 +992,7 @@ public:
     } else {
       OS << "    return SD->getKind() == SyntaxKind::" << Kind << ";\n";
     }
-    
+
     OS <<
     "  }\n"
     "};\n\n";
@@ -1160,7 +1056,7 @@ public:
     OS << "  },\n"
     "  SourcePresence::Present));\n"
     "}\n\n";
-    
+
     return false;
   }
 
