@@ -467,7 +467,6 @@ public:
   void printSwiftSyntaxKindEnum() {
     auto names = {
         "Token",
-        "Unknown",
 #define SYNTAX(Id, Parent) #Id,
 #define SYNTAX_COLLECTION(Id, Element) #Id,
 #define MISSING_SYNTAX(Id, Parent) #Id,
@@ -481,7 +480,8 @@ public:
           "    let container = try decoder.singleValueContainer()\n"
           "    let kind = try container.decode(String.self)\n"
           "    self = SyntaxKind(rawValue: kind) ?? .unknown\n"
-          "  }\n\n";
+          "  }\n"
+          "}\n\n";
   }
   
   void printSwiftTokenKindEnum() {

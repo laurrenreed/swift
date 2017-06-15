@@ -272,7 +272,7 @@ POUND_KEYWORD(dsohandle)
 // Literal tokens
 LITERAL(integer_literal)
 LITERAL(floating_literal)
-LITERAL(string_litera)
+LITERAL(string_literal)
 
 // Miscellaneous tokens
 MISC(unknown)
