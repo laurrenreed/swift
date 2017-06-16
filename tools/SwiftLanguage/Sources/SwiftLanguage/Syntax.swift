@@ -1,10 +1,19 @@
 import Foundation
 
+/// A Syntax node represents a tree of nodes with tokens at the leaves.
+/// Each node has accessors for its known children, and allows efficient
+/// iteration over the children through its `children` property.
 public protocol Syntax: CustomStringConvertible {
- func child(at index: Int) -> Syntax?
+  /// Retrieves the child of this Syntax node at the provied index.
+  ///
+  /// - Parameter index: The index of the child you're looking for.
+  /// - Returns: The child at that provided index, or `nil` if there is no child
+  ///            at that index in the node.
+  func child(at index: Int) -> Syntax?
+  var children: SyntaxChildren { get }
 }
 
-/// A Syntax node represents a tree-like 
+/// The underlying data representation of syntax nodes inside this library.
 internal protocol _SyntaxBase: Syntax {
   /// The root of the tree this node is currently in.
   var root: SyntaxData { get }
@@ -40,10 +49,13 @@ extension Syntax {
 }
 
 extension _SyntaxBase {
+  /// Accesses the raw syntax underlying this node.
   var raw: RawSyntax {
     return data.raw
   }
-  
+
+  /// Prints the raw value of this node to the provided stream.
+  /// - Parameter stream: The stream to which to print the raw tree.
   func print<StreamType: TextOutputStream>(to stream: inout StreamType) {
     data.raw.print(to: &stream)
   }
@@ -71,6 +83,9 @@ func ==(lhs: _SyntaxBase, rhs: _SyntaxBase) -> Bool {
   return lhs.data === rhs.data
 }
 
+/// A Syntax node that knows nothing about its underlying structure. Its
+/// children will be dynamically created on request, so it can be iterated over
+/// and queried as an opaque node.
 public struct UnknownSyntax: _SyntaxBase {
   let root: SyntaxData
   unowned let data: SyntaxData
@@ -78,47 +93,62 @@ public struct UnknownSyntax: _SyntaxBase {
 
 /// MARK: - Nodes
 
+/// A Syntax node representing a Swift `struct` declaration.
 public struct StructDeclSyntax: _SyntaxBase {
   let root: SyntaxData
   unowned let data: SyntaxData
 
+  /// The token for the `struct` keyword.
   public var structKeyword: TokenSyntax {
     return TokenSyntax(root: root,
                        data: data.cachedChild(at: Cursor.structKeyword))
   }
 
+  /// The name of this `struct`.
   public var identifier: TokenSyntax {
     return TokenSyntax(root: root,
                        data: data.cachedChild(at: Cursor.identifierToken))
   }
 
+  /// The token for the left brace that opens this `struct`.
   public var leftBrace: TokenSyntax {
     return TokenSyntax(root: root,
                        data: data.cachedChild(at: Cursor.leftBraceToken))
   }
 
+  /// The declaration members for this `struct`.
   public var members: StructDeclMembersSyntax {
     return StructDeclMembersSyntax(root: root,
                                    data: data.cachedChild(at: Cursor.members))
   }
 
+  /// The token for the right brace that closes this `struct`.
   public var rightBrace: TokenSyntax {
     return TokenSyntax(root: root,
                        data: data.cachedChild(at: Cursor.rightBraceToken))
   }
 
+  /// Constructs a new `StructDeclSyntax` with the `structKeyword` replaced
+  /// with the provided `TokenSyntax`.
+  /// - Parameter keyword: The new `structKeyword` token.
   public func withStructKeyword(_ keyword: TokenSyntax) -> StructDeclSyntax {
     let (root, newData) = data.replacingChild(keyword.raw,
                                               at: Cursor.structKeyword)
     return StructDeclSyntax(root: root, data: newData)
   }
 
+  /// Constructs a new `StructDeclSyntax` with the `identifier` replaced
+  /// with the provided `TokenSyntax`.
+  /// - Parameter keyword: The new `identifier` token.
   public func withIdentifier(_ identifier: TokenSyntax) -> StructDeclSyntax {
     let (root, newData) = data.replacingChild(identifier.raw,
                                               at: Cursor.identifierToken)
     return StructDeclSyntax(root: root, data: newData)
   }
 
+  /// Constructs a new `StructDeclSyntax` with the `leftBrace` replaced
+  /// with the provided `TokenSyntax`.
+  /// - Parameter keyword: The new `leftBrace` token.
   public func withLeftBrace(_ token: TokenSyntax) -> StructDeclSyntax {
     let (root, newData) = data.replacingChild(token.raw,
                                               at: Cursor.leftBraceToken)
@@ -131,12 +161,17 @@ public struct StructDeclSyntax: _SyntaxBase {
     return StructDeclSyntax(root: root, data: newData)
   }
 
+
+  /// Constructs a new `StructDeclSyntax` with the `rightBrace` replaced
+  /// with the provided `TokenSyntax`.
+  /// - Parameter keyword: The new `rightBrace` token.
   public func withRightBrace(_ token: TokenSyntax) -> StructDeclSyntax {
     let (root, newData) = data.replacingChild(token.raw,
                                               at: Cursor.rightBraceToken)
     return StructDeclSyntax(root: root, data: newData)
   }
 
+  /// A cursor into the different children of this node, in order.
   enum Cursor: Int {
     case structKeyword
     case identifierToken
@@ -146,15 +181,18 @@ public struct StructDeclSyntax: _SyntaxBase {
   }
 }
 
+/// A Syntax node representing the members of a Swift `struct` declaration.
 public struct StructDeclMembersSyntax: _SyntaxBase {
   let root: SyntaxData
   unowned var data: SyntaxData
 }
 
+/// A Syntax node representing a single token.
 public struct TokenSyntax: _SyntaxBase {
   let root: SyntaxData
   unowned var data: SyntaxData
-  
+
+  /// The text of the token as written in the source code.
   public var text: String {
     guard case .token(let kind, _, _, _) = raw else {
       fatalError("TokenSyntax must have token as its raw")

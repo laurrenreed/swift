@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import Darwin
 
 /// AtomicCache is a wrapper class around an uninitialized value.
 /// It takes a closure that it will use to create the value atomically. The

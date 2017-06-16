@@ -120,12 +120,22 @@ public enum TriviaPiece: Codable {
 
   /// A documentation block comment, starting with '/**' and ending with '*/.
   case docBlockComment(String)
-  
+
+  /// Prints a sequence of characters to a stream however many times are
+  /// specified.
+  /// - Parameters:
+  ///   - character: The character to print.
+  ///   - count: How many times to print the character.
+  ///   - stream: The stream to which to print the character.
   private func printRepeated<StreamType: TextOutputStream>
     (_ character: String, count: Int, to stream: inout StreamType) {
     for _ in 0..<count { stream.write(character) }
   }
 
+
+  /// Prints the provided trivia as they would be written in a source file.
+  ///
+  /// - Parameter stream: The stream to which to print the trivia.
   func print<StreamType: TextOutputStream>(to stream: inout StreamType) {
     switch self {
     case let .spaces(count): printRepeated(" ", count: count, to: &stream)
@@ -148,6 +158,7 @@ public enum TriviaPiece: Codable {
 public struct Trivia: Sequence, Codable {
   let pieces: [TriviaPiece]
 
+  /// Creates Trivia with the provided underlying pieces.
   public init(pieces: [TriviaPiece]) {
     self.pieces = pieces
   }
@@ -168,6 +179,7 @@ public struct Trivia: Sequence, Codable {
     }
   }
 
+  /// Creates an iterator that can iterate over the pieces of this Trivia.
   public func makeIterator() -> AnyIterator<TriviaPiece> {
     var index = pieces.startIndex
     return AnyIterator {
@@ -177,6 +189,7 @@ public struct Trivia: Sequence, Codable {
     }
   }
 
+  /// Creates Trivia with no pieces.
   public static var zero: Trivia {
     return Trivia(pieces: [])
   }
@@ -242,6 +255,7 @@ public struct Trivia: Sequence, Codable {
 }
 
 extension Trivia: ExpressibleByArrayLiteral {
+  /// Creates Trivia from the provided pieces.
   public init(arrayLiteral elements: TriviaPiece...) {
     self.pieces = elements
   }

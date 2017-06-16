@@ -1,4 +1,5 @@
-public enum SyntaxKind: String, Codable {
+/// Enumerates the known kinds of Syntax represented in the Syntax tree.
+internal enum SyntaxKind: String, Codable {
   case token = "Token"
   case unknown = "Unknown"
   case missingDecl = "MissingDecl"

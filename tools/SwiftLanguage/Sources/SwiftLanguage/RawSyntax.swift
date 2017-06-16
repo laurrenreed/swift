@@ -1,23 +1,33 @@
 import Foundation
 
+/// Represents the raw tree structure underlying the syntax tree. These nodes
+/// have no notion of identity and only provide structure to the tree. They
+/// are immutable and can be freely shared between syntax nodes.
 indirect enum RawSyntax: Codable {
+  /// A tree node with a kind, an array of children, and a source presence.
   case node(SyntaxKind, [RawSyntax], SourcePresence)
+
+  /// A token with a token kind, leading trivia, trailing trivia, and a source
+  /// presence.
   case token(TokenKind, Trivia, Trivia, SourcePresence)
-  
+
+  /// The syntax kind of this raw syntax.
   var kind: SyntaxKind {
     switch self {
     case .node(let kind, _, _): return kind
     case .token: return .token
     }
   }
-  
+
+  /// The layout of the children of this Raw syntax node.
   var layout: [RawSyntax] {
     switch self {
     case .node(_, let layout, _): return layout
     case .token: return []
     }
   }
-  
+
+  /// Keys for serializing RawSyntax nodes.
   enum CodingKeys: CodingKey {
     // Keys for the `node` case
     case kind, layout, presence
@@ -25,7 +35,8 @@ indirect enum RawSyntax: Codable {
     // Keys for the `token` case
     case tokenKind, leadingTrivia, trailingTrivia
   }
-  
+
+  /// Creates a RawSyntax from the provided Foundation Decoder.
   init(from decoder: Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     let presence = try container.decode(SourcePresence.self, forKey: .presence)
@@ -39,7 +50,8 @@ indirect enum RawSyntax: Codable {
       self = .token(kind, leadingTrivia, trailingTrivia, presence)
     }
   }
-  
+
+  /// Encodes the RawSyntax to the provided Foundation Encoder.
   func encode(to encoder: Encoder) throws {
     var container = encoder.container(keyedBy: CodingKeys.self)
     switch self {
@@ -54,22 +66,42 @@ indirect enum RawSyntax: Codable {
       try container.encode(presence, forKey: .presence)
     }
   }
-  
+
+  /// Creates a RawSyntax noe that's marked missing in the source with the
+  /// provided kind and layout.
+  /// - Parameters:
+  ///   - kind: The syntax kind underlying this node.
+  ///   - layout: The children of this node.
+  /// - Returns: A new RawSyntax `.node` with the provided kind and layout, with
+  ///            `.missing` source presence.
   static func missing(_ kind: SyntaxKind, layout: [RawSyntax]) -> RawSyntax {
     return .node(kind, layout, .missing)
   }
-  
-  static func missingToken(_ kind: TokenKind) {
-    return
+
+  /// Creates a RawSyntax token that's marked missing in the source with the
+  /// provided kind and no leading/trailing trivia.
+  /// - Parameter kind: The token kind.
+  /// - Returns: A new RawSyntax `.token` with the provided kind, no
+  ///            leading/trailing trivia, and `.missing` source presence.
+  static func missingToken(_ kind: TokenKind) -> RawSyntax {
+    return .token(kind, [], [], .missing)
   }
-  
+
+  /// Returns a new RawSyntax node with the provided layout instead of the
+  /// existing layout.
+  /// - Note: This function does nothing with `.token` nodes --- the same token
+  ///         is returned.
+  /// - Parameter newLayout: The children of the new node you're creating.
   func replacingLayout(_ newLayout: [RawSyntax]) -> RawSyntax {
     switch self {
     case let .node(kind, _, presence): return .node(kind, newLayout, presence)
     case .token: return self
     }
   }
-  
+
+  /// Prints the RawSyntax node, and all of its children, to the provided
+  /// stream. This implementation must be source-accurate.
+  /// - Parameter stream: The stream on which to output this node.
   func print<StreamType: TextOutputStream>(to stream: inout StreamType) {
     switch self {
     case .node(_, let layout, _):
@@ -87,11 +119,21 @@ indirect enum RawSyntax: Codable {
       }
     }
   }
-  
+
+  /// Creates a Syntax node from this RawSyntax using the appropriate Syntax
+  /// type, as specified by its kind.
   func makeRootSyntax() -> Syntax {
     return makeSyntax(root: nil, indexInParent: 0, parent: nil)
   }
-  
+
+  /// Creates a Syntax node from this RawSyntax using the appropriate Syntax
+  /// type, as specified by its kind.
+  /// - Parameters:
+  ///   - root: The root of this tree, or `nil` if the new node is the root.
+  ///   - indexInParent: The index of this node in the parent. Ignored if
+  ///                    the parent provided is `nil`.
+  ///   - parent: The parent data for this new node, or `nil` if this node is
+  ///             the root.
   func makeSyntax(root: SyntaxData?, indexInParent: Int,
                   parent: SyntaxData?) -> Syntax {
     let data = parent?.cachedChild(at: indexInParent) ??
@@ -99,19 +141,23 @@ indirect enum RawSyntax: Codable {
                          parent: parent)
     return kind.syntaxType.init(root: root ?? data, data: data)
   }
-  
+
+  /// Returns the child at the provided cursor in the layout.
+  /// - Parameter index: The index of the child you're accessing.
+  /// - Returns: The child at the provided index.
   subscript<CursorType: RawRepresentable>(_ index: CursorType) -> RawSyntax
     where CursorType.RawValue == Int {
       return layout[index.rawValue]
   }
 
-  var isToken: Bool {
-    return kind == .token
-  }
-  
+  /// Replaces the child at the provided index in this node with the provided
+  /// child.
+  /// - Parameters:
+  ///   - index: The index of the child to replace.
+  ///   - newChild: The new child that should occupy that index in the node.
   func replacingChild(_ index: Int,
                       with newChild: RawSyntax) -> RawSyntax {
-    precondition(index < layout.count, "cursor reached past layout")
+    precondition(index < layout.count, "cursor \(index) reached past layout")
     var newLayout = layout
     newLayout[index] = newChild
     return replacingLayout(newLayout)

@@ -1,3 +1,4 @@
+/// Enumerates the kinds of tokens in the Swift language.
 public enum TokenKind: Codable {
   case identifier(String)
   case integer_literal(String)
@@ -112,7 +113,8 @@ public enum TokenKind: Codable {
   case pound_column
   case pound_function
   case pound_dsohandle
-  
+
+  /// The textual representation of this token kind.
   var text: String {
     switch self {
     case .identifier(let text): return text
@@ -230,11 +232,12 @@ public enum TokenKind: Codable {
     case .pound_dsohandle: return "dsohandle"
     }
   }
-  
+
+  /// Keys for serializing and deserializing token kinds.
   enum CodingKeys: String, CodingKey {
     case kind, text
   }
-  
+
   public init(from decoder: Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     let kind = try container.decode(String.self, forKey: .kind)
