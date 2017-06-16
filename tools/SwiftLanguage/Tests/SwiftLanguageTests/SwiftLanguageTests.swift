@@ -96,7 +96,7 @@ class SwiftLanguageTests: XCTestCase {
                    }
                    """)
 
-    XCTAssertNotEqual(structDecl.lefttBrace.data, renamed.leftBrace.data)
+    XCTAssertNotEqual(structDecl.leftBrace.data, renamed.leftBrace.data)
 
     // Ensure that accessing children via named identifiers is exactly the
     // same as accessing them as their underlying data.
@@ -128,5 +128,6 @@ class SwiftLanguageTests: XCTestCase {
     ("testAtomicCachePathological", testAtomicCachePathological),
     ("testAtomicCacheTwoAccesses", testAtomicCacheTwoAccesses),
     ("testGenerated", testGenerated),
+    ("testRoundTripSerialize", testRoundTripSerialize),
   ]
 }
