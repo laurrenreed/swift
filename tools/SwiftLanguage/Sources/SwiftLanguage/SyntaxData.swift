@@ -6,7 +6,7 @@ final class SyntaxData: Equatable {
   let indexInParent: Int
   weak var parent: SyntaxData?
 
-  private(set) var childCaches: [AtomicCache<SyntaxData>]
+  let childCaches: [AtomicCache<SyntaxData>]
 
   required init(raw: RawSyntax, indexInParent: Int = 0, parent: SyntaxData?) {
     self.raw = raw
