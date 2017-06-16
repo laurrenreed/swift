@@ -583,7 +583,9 @@ public:
     auto ClassName = Node.getName();
     llvm::SmallVector<std::string, 10> CursorNames;
 
-    OS << "public struct " << ClassName << ": _SyntaxBase {\n";
+    OS << "public struct " << ClassName << ": _SyntaxBase {\n"
+          "  let root: SyntaxData\n"
+          "  unowned let data: SyntaxData\n\n";
     for (auto Child : getChildrenOf(Node)) {
       auto ChildName = getCursorName(Child);
       CursorNames.emplace_back(ChildName);

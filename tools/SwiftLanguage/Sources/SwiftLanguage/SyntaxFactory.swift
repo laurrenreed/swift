@@ -1,9 +1,15 @@
 import Foundation
 
 public enum SyntaxFactory {
-  internal static func fromRaw<T: _SyntaxBase>(_ raw: RawSyntax) -> T {
+
+  /// Creates a node from the raw representation given a contextual type.
+  ///
+  /// - Parameter raw: The raw value underlying the node.
+  /// - Returns: A Syntax node of the provided contextual type with the provided
+  ///            raw as its layout.
+  internal static func fromRaw<SyntaxType: _SyntaxBase>(_ raw: RawSyntax) -> SyntaxType {
     let data = SyntaxData(raw: raw, parent: nil)
-    return T.init(root: data, data: data)
+    return SyntaxType.init(root: data, data: data)
   }
 
   public static func makeStructDecl(structKeyword: TokenSyntax,
@@ -26,7 +32,7 @@ public enum SyntaxFactory {
   public static func makeStructDeclMembers(members: [Syntax],
                                            presence: SourcePresence = .present) -> StructDeclMembersSyntax {
     return fromRaw(.node(.declMembers,
-                         members.map { ($0 as! _SyntaxBase).data.raw },
+                         members.map { $0.raw },
                          presence))
   }
 

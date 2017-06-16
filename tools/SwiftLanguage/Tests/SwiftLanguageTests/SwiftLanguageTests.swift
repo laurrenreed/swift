@@ -96,7 +96,11 @@ class SwiftLanguageTests: XCTestCase {
                    }
                    """)
 
-    XCTAssertNotEqual(structDecl.leftBrace.data, renamed.leftBrace.data)
+    XCTAssertNotEqual(structDecl.lefttBrace.data, renamed.leftBrace.data)
+
+    // Ensure that accessing children via named identifiers is exactly the
+    // same as accessing them as their underlying data.
+    XCTAssertEqual(structDecl.leftBrace.data, structDecl.child(at: 2)?.data)
     
     XCTAssertEqual("\(structDecl.leftBrace)",
                    """

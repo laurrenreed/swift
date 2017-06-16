@@ -33,6 +33,10 @@ extension Syntax {
   var raw: RawSyntax {
     return data.raw
   }
+
+  public var children: SyntaxChildren {
+    return SyntaxChildren(node: self)
+  }
 }
 
 extension _SyntaxBase {
@@ -54,17 +58,17 @@ extension _SyntaxBase {
                                         parent: data)
   }
 
-  /// Determines if two nodes are equal to each other.
-  public static func ==(lhs: _SyntaxBase, rhs: _SyntaxBase) -> Bool {
-    return lhs.data === rhs.data
-  }
-
   /// A source-accurate description of this node.
   public var description: String {
     var s = ""
     self.print(to: &s)
     return s
   }
+}
+
+/// Determines if two nodes are equal to each other.
+func ==(lhs: _SyntaxBase, rhs: _SyntaxBase) -> Bool {
+  return lhs.data === rhs.data
 }
 
 public struct UnknownSyntax: _SyntaxBase {
