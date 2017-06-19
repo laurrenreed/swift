@@ -129,6 +129,28 @@ class SwiftLanguageTests: XCTestCase {
                    """)
   }
 
+  func testWalker() {
+    class TestWalker: SyntaxWalker {
+      override func visitTokenSyntax(_ syntax: TokenSyntax) -> TokenSyntax {
+        if case .identifier(let name) = syntax.tokenKind {
+          return SyntaxFactory.makeToken(kind: .identifier("New\(name)"))
+        }
+        return syntax
+      }
+    }
+
+    let struct1 = makeStructDecl()
+    let struct2 = makeStructDecl()
+      .withIdentifier(SyntaxFactory.makeToken(kind: .identifier("Bar")))
+
+    let walker = TestWalker()
+    let visited1 = walker.visitStructDeclSyntax(struct1)
+    let visited2 = walker.visitStructDeclSyntax(struct2)
+
+    XCTAssertEqual(visited1.identifier.text, "NewFoo")
+    XCTAssertEqual(visited2.identifier.text, "NewBar")
+  }
+
   func testRoundTripSerialize() {
     let structDecl = makeStructDecl()
     do {

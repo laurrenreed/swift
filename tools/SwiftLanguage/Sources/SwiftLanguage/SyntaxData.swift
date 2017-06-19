@@ -80,25 +80,46 @@ final class SyntaxData: Equatable {
     return cachedChild(at: cursor.rawValue)
   }
 
+  /// Walks up the provided node's parent tree looking for the receiver.
+  /// - parameter data: The potential child data.
+  /// - returns: `true` if the receiver exists in the parent chain of the
+  ///            provided data.
+  /// - seealso: isDescendent(of:)
+  func isAncestor(of data: SyntaxData) -> Bool {
+    return data.isDescendent(of: self)
+  }
+
+  /// Walks up the receiver's parent tree looking for the provided node.
+  /// - parameter data: The potential ancestor data.
+  /// - returns: `true` if the data exists in the parent chain of the receiver.
+  /// - seealso: isAncestor(of:)
+  func isDescendent(of data: SyntaxData) -> Bool {
+    if data == self { return true }
+    var node = self
+    while let parent = node.parent {
+      if parent == data { return true }
+      node = parent
+    }
+    return false
+  }
+
   /// Creates a copy of `self` and recursively creates `SyntaxData` nodes up to
   /// the root.
   /// - parameter newRaw: The new RawSyntax that will back the new `Data`
   /// - returns: A tuple of both the new root node and the new data with the raw
   ///            layout replaced.
   func replacingSelf(_ newRaw: RawSyntax) -> (root: SyntaxData, newValue: SyntaxData) {
-    let newMe = SyntaxData(raw: newRaw, indexInParent: indexInParent,
-                           parent: nil)
     // If we have a parent already, then ask our current parent to copy itself
     // recursively up to the root.
     if let parent = parent {
       let (root, newParent) = parent.replacingChild(newRaw, at: indexInParent)
-      // Reassign the new data's parent to the new copy of the parent we just
-      // created.
-      newMe.parent = newParent
+      let newMe = newParent.cachedChild(at: indexInParent)
       return (root: root, newValue: newMe)
     } else {
       // Otherwise, we're already the root, so return the new data as both the
       // new root and the new data.
+      let newMe = SyntaxData(raw: newRaw, indexInParent: indexInParent,
+                             parent: nil)
       return (root: newMe, newValue: newMe)
     }
   }

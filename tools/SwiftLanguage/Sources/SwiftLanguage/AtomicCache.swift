@@ -51,14 +51,23 @@ class AtomicCache<Value: AnyObject> {
     return _stdlib_atomicLoadARCRef(object: _cachedValue) as! Value
   }
 
+  /// Unsafely attempts to load the value and cast it to the appropriate
+  /// type.
+  /// - note: Only for use in the debugger!
+  @available(*, deprecated, message: "Only for use in the debugger.")
+  var unsafeValue: Value? {
+    return _stdlib_atomicLoadARCRef(object: _cachedValue) as? Value
+  }
+
   /// Creates a new AtomicCache that will hold the value returned by the
   /// provided closure.
   init() {
-    self._cachedValue.pointee = nil
+    self._cachedValue.initialize(to: nil)
   }
 
   /// Free the underlying buffer.
   deinit {
+    _cachedValue.deinitialize()
     _cachedValue.deallocate(capacity: 1)
   }
 }

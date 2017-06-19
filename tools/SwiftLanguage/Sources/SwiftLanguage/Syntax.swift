@@ -42,19 +42,21 @@ internal protocol _SyntaxBase: Syntax {
 }
 
 extension Syntax {
-  /// Access the data, assuming the node is a _SyntaxBase.
-  var data: SyntaxData {
+  /// Access the underlying _SyntaxBase, assuming the node conforms.
+  var base: _SyntaxBase {
     guard let base = self as? _SyntaxBase else {
       fatalError("Consumers of libSyntax must not conform to the Syntax protocol")
     }
+    return base
+  }
+
+  /// Access the data, assuming the node is a _SyntaxBase.
+  var data: SyntaxData {
     return base.data
   }
 
   /// Access the root, assuming the node is a _SyntaxBase.
   var rootData: SyntaxData {
-    guard let base = self as? _SyntaxBase else {
-      fatalError("Consumers of libSyntax must not conform to the Syntax protocol")
-    }
     return base.root
   }
 
@@ -226,9 +228,14 @@ public struct TokenSyntax: _SyntaxBase {
 
   /// The text of the token as written in the source code.
   public var text: String {
+    return tokenKind.text
+  }
+
+  /// The kind of token this node represents.
+  public var tokenKind: TokenKind {
     guard case .token(let kind, _, _, _) = raw else {
       fatalError("TokenSyntax must have token as its raw")
     }
-    return kind.text
+    return kind
   }
 }
