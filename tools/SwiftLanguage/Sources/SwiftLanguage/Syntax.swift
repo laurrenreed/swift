@@ -50,6 +50,14 @@ extension Syntax {
     return base.data
   }
 
+  /// Access the root, assuming the node is a _SyntaxBase.
+  var rootData: SyntaxData {
+    guard let base = self as? _SyntaxBase else {
+      fatalError("Consumers of libSyntax must not conform to the Syntax protocol")
+    }
+    return base.root
+  }
+
   /// Access the raw syntax assuming the node is a _SyntaxBase.
   var raw: RawSyntax {
     return data.raw
@@ -57,6 +65,18 @@ extension Syntax {
 
   public var children: SyntaxChildren {
     return SyntaxChildren(node: self)
+  }
+
+  /// The parent of this syntax node, or `nil` if this node is the root.
+  public var parent: Syntax? {
+    guard let parentData = data.parent else { return nil }
+    return parentData.raw.kind.syntaxType.init(root: rootData, data: parentData)
+  }
+
+  /// The root of the tree in which this node resides.
+  public var root: Syntax {
+    let rootData = self.rootData
+    return rootData.raw.kind.syntaxType.init(root: rootData, data: rootData)
   }
 }
 
