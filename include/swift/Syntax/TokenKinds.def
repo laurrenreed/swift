@@ -284,6 +284,7 @@ MISC(oper_binary_spaced)
 MISC(oper_postfix)
 MISC(oper_prefix)
 MISC(dollarident)
+MISC(sil_local_name)
 MISC(comment)
 
 #undef KEYWORD
