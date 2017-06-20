@@ -10,12 +10,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "swift/Syntax/DeclSyntax.h"
-#include "swift/Syntax/ExprSyntax.h"
-#include "swift/Syntax/GenericSyntax.h"
 #include "swift/Syntax/LegacyASTTransformer.h"
 #include "swift/Syntax/References.h"
-#include "swift/Syntax/StmtSyntax.h"
 #include "swift/Syntax/SyntaxFactory.h"
 #include "swift/Syntax/TokenSyntax.h"
 #include "swift/Syntax/UnknownSyntax.h"
@@ -447,44 +443,14 @@ RC<SyntaxData>
 LegacyASTTransformer::visitBraceStmt(BraceStmt *S,
                                      const SyntaxData *Parent,
                                      const CursorIndex IndexInParent) {
-  auto LeftBrace = S->getLBraceLoc().isValid()
-    ? findTokenSyntax(tok::l_brace, "{", SourceMgr, S->getLBraceLoc(),
-                    BufferID, Tokens)
-    : TokenSyntax::missingToken(tok::l_brace, "{");
-
-  std::vector<StmtSyntax> Stmts;
-  for (auto Node : S->getElements()) {
-    auto Transformed = transformAST(Node, Sema, SourceMgr, BufferID, Tokens);
-    if (Transformed.hasValue()) {
-      Stmts.push_back(Transformed.getValue().castTo<StmtSyntax>());
-    }
-  }
-
-  auto RightBrace = S->getLBraceLoc().isValid()
-    ? findTokenSyntax(tok::r_brace, "}", SourceMgr, S->getLBraceLoc(),
-                    BufferID, Tokens)
-    : TokenSyntax::missingToken(tok::r_brace, "}");
-
-  auto StmtList = SyntaxFactory::makeStmtList(Stmts);
-
-  return SyntaxFactory::makeCodeBlock(LeftBrace, StmtList, RightBrace).Root;
+  return getUnknownStmt(S);
 }
 
 RC<SyntaxData>
 LegacyASTTransformer::visitReturnStmt(ReturnStmt *S,
                                       const SyntaxData *Parent,
                                       const CursorIndex IndexInParent) {
-  auto ReturnKW = findTokenSyntax(tok::kw_return, "return", SourceMgr,
-                                  S->getReturnLoc(), BufferID, Tokens);
-  auto Result = transformAST(S->getResult(), Sema, SourceMgr, BufferID,
-                             Tokens);
-
-  if (!Result.hasValue()) {
-    return getUnknownStmt(S);
-  }
-
-  return SyntaxFactory::makeReturnStmt(ReturnKW,
-    Result.getValue().castTo<ExprSyntax>()).Root;
+  return getUnknownStmt(S);
 }
 
 RC<SyntaxData>
@@ -589,14 +555,7 @@ RC<SyntaxData>
 LegacyASTTransformer::visitFallthroughStmt(FallthroughStmt *S,
                                            const SyntaxData *Parent,
                                            const CursorIndex IndexInParent) {
-  if (S->getLoc().isInvalid()) {
-    return SyntaxFactory::makeBlankFallthroughStmt().Root;
-  }
-
-  auto FallthroughToken = findTokenSyntax(tok::kw_fallthrough, "fallthrough",
-                                          SourceMgr, S->getLoc(),
-                                          BufferID, Tokens);
-  return SyntaxFactory::makeFallthroughStmt(FallthroughToken).Root;
+  return getUnknownStmt(S);
 }
 
 RC<SyntaxData>
@@ -633,15 +592,7 @@ RC<SyntaxData>
 LegacyASTTransformer::visitIntegerLiteralExpr(IntegerLiteralExpr *E,
                                               const SyntaxData *Parent,
                                               const CursorIndex IndexInParent) {
-  auto Sign = E->getMinusLoc().isValid()
-    ? findTokenSyntax(tok::oper_prefix, OwnedString(),
-                      SourceMgr, E->getMinusLoc(),
-                      BufferID, Tokens)
-    : TokenSyntax::missingToken(tok::oper_prefix, "");
-  auto Digits = findTokenSyntax(tok::integer_literal, OwnedString(),
-                                SourceMgr, E->getDigitsLoc(),
-                                BufferID, Tokens);
-  return SyntaxFactory::makeIntegerLiteralExpr(Sign, Digits).Root;
+  return getUnknownExpr(E);
 }
 
 RC<SyntaxData>

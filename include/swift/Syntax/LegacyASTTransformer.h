@@ -108,6 +108,7 @@ transformAST(ASTNode Node,
              const TokenPositionList &Tokens);
 
 /// Do a binary search for a token at the given `Offset`.
+<<<<<<< HEAD
 TokenSyntax findTokenSyntax(tok ExpectedKind,
                                 OwnedString ExpectedText,
                                 SourceManager &SourceMgr,
@@ -116,6 +117,17 @@ TokenSyntax findTokenSyntax(tok ExpectedKind,
                                 const TokenPositionList &Tokens);
 
 //ArrayRef<TokenSyntax>
+=======
+RC<RawTokenSyntax>
+findTokenSyntax(tok ExpectedKind,
+                OwnedString ExpectedText,
+                SourceManager &SourceMgr,
+                SourceLoc Loc,
+                unsigned BufferID,
+                const TokenPositionList &Tokens);
+
+//ArrayRef<RC<RawTokenSyntax>>
+>>>>>>> Fix usages of TokenSyntax instead of RawTokenSyntax.
 //syntax::tokensInRange(SourceRange Range, const TokenPositionList &Tokens);
 
 } // end namespace syntax

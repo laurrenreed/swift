@@ -282,8 +282,7 @@ std::vector<Token> swift::tokenize(const LangOptions &LangOpts,
 }
 
 // TODO: Refactor into common implementation with swift::tokenize.
-std::vector<std::pair<RC<syntax::RawTokenSyntax>,
-                                 syntax::AbsolutePosition>>
+std::vector<std::pair<RC<syntax::RawTokenSyntax>, syntax::AbsolutePosition>>
 swift::tokenizeWithTrivia(const LangOptions &LangOpts,
                           const SourceManager &SM,
                           unsigned BufferID,

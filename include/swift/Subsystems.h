@@ -135,7 +135,7 @@ namespace swift {
   /// \brief Lex and return a vector of `TokenSyntax` tokens, which include
   /// leading and trailing trivia.
   std::vector<std::pair<RC<syntax::RawTokenSyntax>,
-                                   syntax::AbsolutePosition>>
+                        syntax::AbsolutePosition>>
   tokenizeWithTrivia(const LangOptions &LangOpts,
                      const SourceManager &SM,
                      unsigned BufferID,

@@ -36,6 +36,9 @@
 using namespace swift;
 using llvm::StringRef;
 
+using TokenPositionList = std::vector<std::pair<RC<syntax::RawTokenSyntax>,
+                                      syntax::AbsolutePosition>>;
+
 enum class ActionType {
   DumpRawTokenSyntax,
   FullLexRoundTrip,
@@ -75,8 +78,7 @@ int getTokensFromFile(unsigned BufferID,
                       LangOptions &LangOpts,
                       SourceManager &SourceMgr,
                       DiagnosticEngine &Diags,
-                      std::vector<std::pair<RC<syntax::RawTokenSyntax>,
-                      syntax::AbsolutePosition>> &Tokens) {
+                      TokenPositionList &Tokens) {
   Tokens = tokenizeWithTrivia(LangOpts, SourceMgr, BufferID);
   return Diags.hadAnyError() ? EXIT_FAILURE : EXIT_SUCCESS;
 }
@@ -87,8 +89,7 @@ getTokensFromFile(const StringRef InputFilename,
                   LangOptions &LangOpts,
                   SourceManager &SourceMgr,
                   DiagnosticEngine &Diags,
-                  std::vector<std::pair<RC<syntax::RawTokenSyntax>,
-                                        syntax::AbsolutePosition>> &Tokens) {
+                  TokenPositionList &Tokens) {
   auto Buffer = llvm::MemoryBuffer::getFile(InputFilename);
   if (!Buffer) {
     Diags.diagnose(SourceLoc(), diag::cannot_open_file,
@@ -175,8 +176,7 @@ int doFullLexRoundTrip(const StringRef InputFilename) {
   PrintingDiagnosticConsumer DiagPrinter;
   Diags.addConsumer(DiagPrinter);
 
-  std::vector<std::pair<RC<syntax::RawTokenSyntax>,
-                                   syntax::AbsolutePosition>> Tokens;
+  TokenPositionList Tokens;
   if (getTokensFromFile(InputFilename, LangOpts, SourceMgr,
                         Diags, Tokens) == EXIT_FAILURE) {
     return EXIT_FAILURE;
@@ -196,8 +196,7 @@ int doDumpRawTokenSyntax(const StringRef InputFilename) {
   PrintingDiagnosticConsumer DiagPrinter;
   Diags.addConsumer(DiagPrinter);
 
-  std::vector<std::pair<RC<syntax::RawTokenSyntax>,
-                        syntax::AbsolutePosition>> Tokens;
+  TokenPositionList Tokens;
   if (getTokensFromFile(InputFilename, LangOpts, SourceMgr,
                         Diags, Tokens) == EXIT_FAILURE) {
     return EXIT_FAILURE;
@@ -239,8 +238,7 @@ int doSerializeRawTree(const char *MainExecutablePath,
                        const StringRef InputFilename) {
 
   llvm::SmallVector<syntax::Syntax, 10> TopLevelDecls;
-  std::vector<std::pair<RC<syntax::RawTokenSyntax>,
-                        syntax::AbsolutePosition>> Tokens;
+  TokenPositionList Tokens;
   CompilerInstance Instance;
 
   getSyntaxTree(MainExecutablePath, InputFilename, Instance,
