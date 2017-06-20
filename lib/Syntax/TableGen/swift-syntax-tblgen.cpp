@@ -491,7 +491,7 @@ public:
       { "eof", "eof" },
 #define KEYWORD(Id) {"kw_" #Id, #Id},
 #define PUNCTUATOR(Id, Text) { #Id, Text },
-#define POUND_KEYWORD(Id) { "pound_" #Id, #Id },
+#define POUND_KEYWORD(Id) { "pound_" #Id, "#" #Id },
 #define POUND_OLD_OBJECT_LITERAL(Id, A, B, C) // Ignored
 #define SIL_KEYWORD(Id) // Ignored
 #define SIL_PUNCTUATOR(Id, Text) // Ignored
@@ -929,6 +929,8 @@ public:
       auto RawNewChild = NewChildParam + ".getRaw()";
       if (isToken(ChildType)) {
         printTokenAssertion(RawNewChild.str(), ChildType);
+      } else {
+        printSyntaxAssertion(RawNewChild.str(), Child);
       }
       OS << "  return Data->replaceChild(" << RawNewChild << ", " << "Cursor::" << ChildName << ");\n";
       OS << "}\n\n";
