@@ -345,46 +345,25 @@ public:
 
   virtual void printIncludesOfImplementation() {}
   virtual bool printSyntaxInterfaces() {
-
+    const auto Nodes = getRecordsForCategory(options::Category);
+    for (const auto *Node : Nodes) {
+      printPragma(Node->getName().str() + " API");
+      printSyntaxInterface(*Node);
+    }
     return false;
   }
 
   virtual bool printSyntaxImplementations() {
     const auto Nodes = getRecordsForCategory(options::Category);
-    printFileHeader(OS, options::Category);
     for (const auto *Node : Nodes) {
-      printPragma(Node->getName().str() + " Data");
-      printSyntaxDataImplementation(*Node);
       printPragma(Node->getName().str() + " API");
       printSyntaxImplementation(*Node);
     }
     return false;
   }
 
-  virtual bool printSyntaxDataInterface(const Record &Node) { return false; }
-  virtual bool printSyntaxDataImplementation(const Record &Node) {
-    return false;
-  }
-
   virtual bool printSyntaxInterface(const Record &Node) { return false; }
   virtual bool printSyntaxImplementation(const Record &Node) {
-    return false;
-  }
-
-  virtual bool printSyntaxDataInterfaces() {
-    // Print the interface of the "base" category classes, such as 'Stmt', 'Expr',
-    // etc.
-    if (categoryHasBaseClass()) {
-      auto CategoryRecord = AllRecords->getClass(options::Category);
-      printSyntaxDataInterface(*CategoryRecord);
-      printSyntaxInterface(*CategoryRecord);
-    }
-
-    const auto Nodes = getRecordsForCategory(options::Category);
-    for (const auto *Node : Nodes) {
-      printSyntaxDataInterface(*Node);
-      printSyntaxInterface(*Node);
-    }
     return false;
   }
 
@@ -402,6 +381,7 @@ public:
                                     const RecordVal Child) {}
 
   bool genInterface() {
+    printFileHeader(OS, options::Category);
     switch (getCategory()) {
       case Category::DeclSyntax:
       case Category::ExprSyntax:
@@ -426,8 +406,8 @@ public:
   }
 
   bool genImplementation() {
+    printFileHeader(OS, options::Category);
     printIncludesOfImplementation();
-
     switch (getCategory()) {
       case Category::DeclSyntax:
       case Category::ExprSyntax:
@@ -678,10 +658,6 @@ public:
     OS << "/// MARK: " << Mark << "\n\n";
   }
 
-  virtual bool printSyntaxDataImplementation(const Record &Node) {
-    return false;
-  }
-
   ~SwiftSyntaxGenerator() {}
 };
 
@@ -818,7 +794,6 @@ public:
         }
 
         OS << "class " << ReferencedRec->getName() << ";\n";
-        OS << "class " << ReferencedRec->getName() << "Data;\n";
       }
       OS << "\n";
     }
@@ -870,12 +845,7 @@ public:
   virtual bool printSyntaxInterface(const Record &Node) {
     auto ClassName = Node.getName().str();
     auto Kind = stripSyntaxSuffix(ClassName).str();
-    llvm::errs() << ClassName << "supers:\n";
-    for (const auto &Super : Node.getSuperClasses()) {
-      llvm::errs() << Super.first->getName() << "\n";
-    }
     auto SuperclassName = Node.getSuperClasses().back().first->getName().str();
-    auto DataClassName = ClassName + "Data";
 
     auto Superclass = SuperclassName;
 
@@ -889,7 +859,6 @@ public:
 
     OS << "class " << ClassName << " : public " << Superclass << " {\n"
     "  friend struct SyntaxFactory;\n"
-    "  friend class " << DataClassName << ";\n"
     "  friend class Syntax;\n"
     "  friend class SyntaxData;\n"
     "\n";
@@ -897,9 +866,7 @@ public:
     if (isBaseSyntaxClass(Node)) {
       OS << "public:\n";
     }
-    OS <<
-    "  using DataType = " << DataClassName << ";\n"
-    "\n";
+    OS << "\n";
 
     if (!getChildrenOf(Node).empty()) {
       OS << "  enum class Cursor : CursorIndex {\n";
@@ -910,8 +877,14 @@ public:
     }
 
     OS <<
-    "  " << ClassName << "(RC<SyntaxData> Root, const DataType* Data)\n"
-    "    : " << SuperclassName << "(Root, Data) {}\n"
+    "  " << ClassName << "(RC<SyntaxData> Root, const SyntaxData *Data)\n"
+    "    : " << SuperclassName << "(Root, Data) {\n"
+    "    if (Data && Data->Raw) {\n"
+    "      assert(Data->Raw->Kind == SyntaxKind::" << Kind << ");\n"
+    "      assert(Data->Raw->Layout.size() == " <<
+                 getChildrenOf(Node).size() << ");\n"
+    "    }\n"
+    "  }\n"
     "public:\n";
     for (const auto &Child : getChildrenOf(Node)) {
       auto ChildType = getLayoutNodeRecord(Child);
@@ -944,13 +917,9 @@ public:
 
       // Getter
       OS << ChildTypeName << "\n" <<
-      ClassName << "::get" << ChildName << "() const {\n"
-      "  auto RawChild = getRaw()->getChild(Cursor::" << ChildName << ");\n"
-      "  auto *MyData = getUnsafeData<" << ClassName << ">();\n"
-      "  auto &ChildPtr = *reinterpret_cast<std::atomic<uintptr_t>*>(\n"
-      "    &MyData->Cached" << ChildName << ");\n"
-      "  SyntaxData::realizeSyntaxNode<" << ChildTypeName << ">(ChildPtr, RawChild, MyData, cursorIndex(Cursor::" << ChildName << "));\n"
-      "  return " << ChildTypeName << " { Root, MyData->Cached" << ChildName << ".get() };\n"
+          ClassName << "::get" << ChildName << "() const {\n"
+      "  auto ChildData = Data->getChild(Cursor::" << ChildName << ");\n"
+      "  return " << ChildTypeName << " { Root, ChildData.get() };\n"
       "}\n\n";
 
       // Setter
@@ -961,121 +930,9 @@ public:
       if (isToken(ChildType)) {
         printTokenAssertion(RawNewChild.str(), ChildType);
       }
-      OS << "  return Data->replaceChild<" << ClassName << ">(" << RawNewChild << ", " << "Cursor::" << ChildName << ");\n";
+      OS << "  return Data->replaceChild(" << RawNewChild << ", " << "Cursor::" << ChildName << ");\n";
       OS << "}\n\n";
     }
-
-    return false;
-  }
-
-  virtual bool printSyntaxDataInterface(const Record &Node) {
-    auto ClassName = Node.getName();
-    auto SuperclassName = Node.getSuperClasses().back().first->getName();
-    auto Kind = stripSyntaxSuffix(ClassName).str();
-    auto DataClassName = ClassName + "Data";
-    auto DataSuperclassName = SuperclassName + "Data";
-
-    if (SuperclassName == "SyntaxCollection") {
-      auto ElementChild = cast<DefInit>(Node.getValue("Element")->getValue());
-      auto TemplateArgs = std::string("<SyntaxKind::") + Kind + ", " + ElementChild->getDef()->getName().str() + std::string(">");
-      OS << "using " << DataClassName << " = " << DataSuperclassName << TemplateArgs << ";\n\n";
-      return false;
-    }
-
-    OS << "class " << DataClassName << " : public " << DataSuperclassName << " {\n"
-    "  friend class SyntaxData;\n"
-    "  friend struct SyntaxFactory;\n"
-    "  friend class " << ClassName << ";\n\n";
-
-    // Private, cached RC<*SyntaxData> members
-    for (const auto &Child : getChildrenOf(Node)) {
-      auto ChildType = getLayoutNodeRecord(Child);
-      auto ChildTypeName = getChildTypeName(ChildType) + "Data";
-      OS << "  RC<" << ChildTypeName << "> Cached" << Child.getName() << ";\n";
-    }
-
-    if (isBaseSyntaxClass(Node)) {
-      OS << "protected:\n";
-    }
-
-    OS <<
-    "\n"
-    "  " << DataClassName << "(RC<RawSyntax> Raw, const SyntaxData *Parent = nullptr, CursorIndex IndexInParent = 0);\n"
-    "\n"
-    "  static RC<" << DataClassName << "> make(RC<RawSyntax> Raw, const SyntaxData *Parent = nullptr, CursorIndex IndexInParent = 0);\n"
-    "  static RC<" << DataClassName << "> makeBlank();\n"
-    "\n"
-    "public:\n"
-    "  static bool classof(const SyntaxData *SD) {\n";
-    if (isBaseSyntaxClass(Node)) {
-      OS << "    return SD->is" << Kind << "();\n";
-    } else {
-      OS << "    return SD->getKind() == SyntaxKind::" << Kind << ";\n";
-    }
-
-    OS <<
-    "  }\n"
-    "};\n\n";
-    return false;
-  }
-
-  virtual bool printSyntaxDataImplementation(const Record &Node) {
-    auto ClassName = Node.getName();
-    auto Kind = stripSyntaxSuffix(ClassName);
-    auto SuperclassName = Node.getSuperClasses().back().first->getName();
-    auto DataClassName = ClassName + "Data";
-    auto DataSuperclassName = SuperclassName + "Data";
-
-    // Constructor
-    OS << DataClassName << "::" << DataClassName
-       << "(RC<RawSyntax> Raw, const SyntaxData *Data, "
-          "const CursorIndex IndexInParent)\n"
-    "  : " << DataSuperclassName << "(Raw, Data, IndexInParent) {\n"
-    "  assert(Raw->Kind == SyntaxKind::" << Kind << ");\n"
-    "  assert(Raw->Layout.size() == " << getChildrenOf(Node).size() << ");\n";
-    for (const auto &Child : getChildrenOf(Node)) {
-      auto ChildName = Child.getName();
-      auto ChildType = getLayoutNodeRecord(Child);
-      auto ChildVariable = "Raw->getChild(" + ClassName + "::Cursor::" +
-                           ChildName + ")";
-      if (isToken(ChildType)) {
-        printTokenAssertion(ChildVariable.str(), ChildType);
-      } else {
-        printSyntaxAssertion(ChildVariable, Child);
-      }
-    }
-    OS << "}\n\n";
-
-    // make
-    OS << "RC<" << DataClassName << ">\n" <<
-    DataClassName << "::make(RC<RawSyntax> Raw, const SyntaxData *Parent, "
-                     "const CursorIndex IndexInParent) {\n"
-    "  return RC<" << DataClassName << "> {\n"
-    "    new " << DataClassName << " { Raw, Parent, IndexInParent }\n"
-    "  };\n"
-    "}\n\n";
-
-    // makeBlank
-    OS << "RC<" << DataClassName << ">\n" <<
-    DataClassName << "::makeBlank() {\n"
-    "  return make(RawSyntax::make(SyntaxKind::" << Kind << ",\n"
-    "  {\n";
-    for (const auto &Child : getChildrenOf(Node)) {
-      auto ChildType = getLayoutNodeRecord(Child);
-      if (isToken(ChildType)) {
-        auto ChildRec = getLayoutNodeRecord(Child);
-        auto TokenKind = ChildRec.getValueAsString("Kind");
-        auto TokenSpelling = ChildRec.getValueAsString("Spelling");
-        OS << "    RawTokenSyntax::missingToken(tok::" << TokenKind << ", \"" <<
-              TokenSpelling << "\"),\n";
-      } else {
-        auto ChildKind = getMissingSyntaxKind(Child);
-        OS << "    RawSyntax::missing(SyntaxKind::" << ChildKind << "),\n";
-      }
-    }
-    OS << "  },\n"
-    "  SourcePresence::Present));\n"
-    "}\n\n";
 
     return false;
   }
