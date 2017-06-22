@@ -52,6 +52,8 @@ def LeftBraceTokenSyntax : TokenSyntax<"{", "l_brace">;
 def RightBraceTokenSyntax : TokenSyntax<"}", "r_brace">;
 def LeftSquareTokenSyntax: TokenSyntax<"[", "l_square">;
 def RightSquareTokenSyntax: TokenSyntax<"]", "r_square">;
+def LeftAngleTokenSyntax: TokenSyntax<"<", "l_angle">;
+def RightAngleTokenSyntax: TokenSyntax<">", "r_angle">;
 def AmpersandTokenSyntax: TokenSyntax<"&", "amp_prefix">;
 def QuestionMarkPostfixTokenSyntax: TokenSyntax<"?", "question_postfix">;
 def QuestionMarkInfixTokenSyntax: TokenSyntax<"?", "question_infix">;

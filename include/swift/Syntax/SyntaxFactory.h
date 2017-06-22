@@ -53,7 +53,7 @@ struct SyntaxFactory {
 
   /// Collect a list of tokens into a piece of "unknown" syntax.
   static UnknownSyntax
-  makeUnknownSyntax(llvm::ArrayRef<RC<TokenSyntax>> Tokens);
+  makeUnknownSyntax(ArrayRef<TokenSyntax> tokens);
 };
 } // end namespace syntax
 } // end namespace swift

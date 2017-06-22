@@ -31,7 +31,6 @@ public struct SyntaxCollection<SyntaxElement: Syntax>: _SyntaxBase {
     return SyntaxCollection<SyntaxElement>(root: newRoot, data: newData)
   }
 
-
   /// Creates a new SyntaxCollection by appending the provided syntax element
   /// to the children.
   ///

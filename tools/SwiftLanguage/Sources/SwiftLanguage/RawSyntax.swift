@@ -27,7 +27,7 @@ indirect enum RawSyntax: Codable {
   var kind: SyntaxKind {
     switch self {
     case .node(let kind, _, _): return kind
-    case .token: return .token
+    case .token(_, _, _, _): return .token
     }
   }
 
@@ -35,7 +35,7 @@ indirect enum RawSyntax: Codable {
   var layout: [RawSyntax] {
     switch self {
     case .node(_, let layout, _): return layout
-    case .token: return []
+    case .token(_, _, _, _): return []
     }
   }
 
@@ -107,7 +107,7 @@ indirect enum RawSyntax: Codable {
   func replacingLayout(_ newLayout: [RawSyntax]) -> RawSyntax {
     switch self {
     case let .node(kind, _, presence): return .node(kind, newLayout, presence)
-    case .token: return self
+    case .token(_, _, _, _): return self
     }
   }
 
