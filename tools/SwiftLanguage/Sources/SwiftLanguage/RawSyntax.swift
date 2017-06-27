@@ -39,6 +39,14 @@ indirect enum RawSyntax: Codable {
     }
   }
 
+  /// The source presence of this node.
+  var presence: SourcePresence {
+    switch self {
+      case .node(_, _, let presence),
+           .token(_, _, _, let presence): return presence
+    }
+  }
+
   /// Keys for serializing RawSyntax nodes.
   enum CodingKeys: CodingKey {
     // Keys for the `node` case

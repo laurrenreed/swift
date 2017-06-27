@@ -166,10 +166,27 @@ class SwiftLanguageTests: XCTestCase {
     }
   }
 
+  func testTokenSyntax() {
+    let tok = SyntaxFactory.makeToken(kind: .kw_struct)
+    XCTAssertEqual("\(tok)", "struct")
+    XCTAssert(tok.isPresent)
+
+    let preSpacedTok = tok.withLeadingTrivia(.spaces(3))
+    XCTAssertEqual("\(preSpacedTok)", "   struct")
+
+    let postSpacedTok = tok.withTrailingTrivia(.spaces(6))
+    XCTAssertEqual("\(postSpacedTok)", "struct      ")
+
+    let prePostSpacedTok = preSpacedTok.withTrailingTrivia(.spaces(4))
+    XCTAssertEqual("\(prePostSpacedTok)", "   struct    ")
+  }
+
   static var allTests: [(String, (SwiftLanguageTests) -> () -> Void)] = [
     ("testAtomicCachePathological", testAtomicCachePathological),
     ("testAtomicCacheTwoAccesses", testAtomicCacheTwoAccesses),
     ("testGenerated", testGenerated),
+    ("testWalker", testWalker),
+    ("testTokenSyntax", testTokenSyntax),
     ("testRoundTripSerialize", testRoundTripSerialize),
   ]
 }

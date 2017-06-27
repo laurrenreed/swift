@@ -106,6 +106,15 @@ final class SyntaxData: Equatable {
   /// Creates a copy of `self` and recursively creates `SyntaxData` nodes up to
   /// the root.
   /// - parameter newRaw: The new RawSyntax that will back the new `Data`
+  /// - returns: A Syntax node with the provided `RawSyntax` backing it.
+  func replacingSelf<SyntaxType: _SyntaxBase>(_ newRaw: RawSyntax) -> SyntaxType {
+    let (root, data) = replacingSelf(newRaw)
+    return SyntaxType.init(root: root, data: data)
+  }
+
+  /// Creates a copy of `self` and recursively creates `SyntaxData` nodes up to
+  /// the root.
+  /// - parameter newRaw: The new RawSyntax that will back the new `Data`
   /// - returns: A tuple of both the new root node and the new data with the raw
   ///            layout replaced.
   func replacingSelf(_ newRaw: RawSyntax) -> (root: SyntaxData, newValue: SyntaxData) {
@@ -146,12 +155,12 @@ final class SyntaxData: Equatable {
   ///   - child: The raw syntax for the new child to replace.
   ///   - cursor: The cursor pointing to where in the raw layout to place this
   ///             child.
-  /// - Returns: The new root node created by this operation, and the new child
-  ///            syntax data.
-  func replacingChild<CursorType: RawRepresentable>(_ child: RawSyntax,
-                                                    at cursor: CursorType)
-      -> (root: SyntaxData, newValue: SyntaxData) where CursorType.RawValue == Int {
-    return replacingChild(child, at: cursor.rawValue)
+  /// - Returns: A Syntax node of the appropriate type representing the child.
+  func replacingChild<CursorType: RawRepresentable, SyntaxType: _SyntaxBase>
+    (_ child: RawSyntax, at cursor: CursorType) -> SyntaxType
+    where CursorType.RawValue == Int {
+    let (root, data) = replacingChild(child, at: cursor.rawValue)
+    return SyntaxType.init(root: root, data: data)
   }
 
   /// Creates the child's syntax data for the provided cursor.

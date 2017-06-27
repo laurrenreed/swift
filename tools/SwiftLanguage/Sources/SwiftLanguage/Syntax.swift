@@ -22,6 +22,8 @@ public protocol Syntax: CustomStringConvertible {
   /// - Returns: The child at that provided index, or `nil` if there is no child
   ///            at that index in the node.
   func child(at index: Int) -> Syntax?
+
+  /// An iterator over the children of this node.
   var children: SyntaxChildren { get }
 }
 
@@ -65,8 +67,17 @@ extension Syntax {
     return data.raw
   }
 
+  /// An iterator over children of this node.
   public var children: SyntaxChildren {
     return SyntaxChildren(node: self)
+  }
+
+  public var isPresent: Bool {
+    return raw.presence == .present
+  }
+
+  public var isMissing: Bool {
+    return raw.presence == .missing
   }
 
   /// The parent of this syntax node, or `nil` if this node is the root.
@@ -166,43 +177,32 @@ public struct StructDeclSyntax: _SyntaxBase {
   /// with the provided `TokenSyntax`.
   /// - Parameter keyword: The new `structKeyword` token.
   public func withStructKeyword(_ keyword: TokenSyntax) -> StructDeclSyntax {
-    let (root, newData) = data.replacingChild(keyword.raw,
-                                              at: Cursor.structKeyword)
-    return StructDeclSyntax(root: root, data: newData)
+    return data.replacingChild(keyword.raw, at: Cursor.structKeyword)
   }
 
   /// Constructs a new `StructDeclSyntax` with the `identifier` replaced
   /// with the provided `TokenSyntax`.
   /// - Parameter keyword: The new `identifier` token.
   public func withIdentifier(_ identifier: TokenSyntax) -> StructDeclSyntax {
-    let (root, newData) = data.replacingChild(identifier.raw,
-                                              at: Cursor.identifierToken)
-    return StructDeclSyntax(root: root, data: newData)
+    return data.replacingChild(identifier.raw, at: Cursor.identifierToken)
   }
 
   /// Constructs a new `StructDeclSyntax` with the `leftBrace` replaced
   /// with the provided `TokenSyntax`.
   /// - Parameter keyword: The new `leftBrace` token.
   public func withLeftBrace(_ token: TokenSyntax) -> StructDeclSyntax {
-    let (root, newData) = data.replacingChild(token.raw,
-                                              at: Cursor.leftBraceToken)
-    return StructDeclSyntax(root: root, data: newData)
+    return data.replacingChild(token.raw, at: Cursor.leftBraceToken)
   }
 
   public func withMembers(_ members: StructDeclMembersSyntax) -> StructDeclSyntax {
-    let (root, newData) = data.replacingChild(members.raw,
-                                              at: Cursor.members)
-    return StructDeclSyntax(root: root, data: newData)
+    return data.replacingChild(members.raw, at: Cursor.members)
   }
-
 
   /// Constructs a new `StructDeclSyntax` with the `rightBrace` replaced
   /// with the provided `TokenSyntax`.
   /// - Parameter keyword: The new `rightBrace` token.
   public func withRightBrace(_ token: TokenSyntax) -> StructDeclSyntax {
-    let (root, newData) = data.replacingChild(token.raw,
-                                              at: Cursor.rightBraceToken)
-    return StructDeclSyntax(root: root, data: newData)
+    return data.replacingChild(token.raw, at: Cursor.rightBraceToken)
   }
 
   /// A cursor into the different children of this node, in order.
@@ -229,6 +229,36 @@ public struct TokenSyntax: _SyntaxBase {
   /// The text of the token as written in the source code.
   public var text: String {
     return tokenKind.text
+  }
+
+  public func withLeadingTrivia(_ leadingTrivia: Trivia) -> TokenSyntax {
+    guard case let .token(kind, _, trailingTrivia, presence) = raw else {
+      fatalError("TokenSyntax must have token as its raw")
+    }
+    return data.replacingSelf(.token(kind, leadingTrivia,
+                                     trailingTrivia, presence))
+  }
+
+  public func withTrailingTrivia(_ trailingTrivia: Trivia) -> TokenSyntax {
+    guard case let .token(kind, leadingTrivia, _, presence) = raw else {
+      fatalError("TokenSyntax must have token as its raw")
+    }
+    return data.replacingSelf(.token(kind, leadingTrivia,
+                                     trailingTrivia, presence))
+  }
+
+  public var leadingTrivia: Trivia {
+    guard case .token(_, let leadingTrivia, _, _) = raw else {
+      fatalError("TokenSyntax must have token as its raw")
+    }
+    return leadingTrivia
+  }
+
+  public var trailingTrivia: Trivia {
+    guard case .token(_, _, let trailingTrivia, _) = raw else {
+      fatalError("TokenSyntax must have token as its raw")
+    }
+    return trailingTrivia
   }
 
   /// The kind of token this node represents.
