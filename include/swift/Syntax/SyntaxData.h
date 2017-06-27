@@ -49,8 +49,6 @@
 namespace swift {
 namespace syntax {
 
-class Syntax;
-
 /// The class for holding parented syntax.
 ///
 /// This structure should not contain significant public
@@ -211,7 +209,7 @@ public:
   ///
   /// SyntaxData = {
   ///   RC<RawSyntax> Raw = {
-  ///     RC<RawTokenSyntax { SyntaxKind::Token, tok::return_kw, "return" },
+  ///     RC<RawRawTokenSyntax { SyntaxKind::Token, tok::return_kw, "return" },
   ///     RC<RawSyntax> { SyntaxKind::SomeExpression, ... }
   ///   }
   ///   llvm::SmallVector<AtomicCache<SyntaxData>, 10> Children {
@@ -220,7 +218,7 @@ public:
   ///   }
   /// }
   ///
-  /// If we wanted to safely create the 0th child, an instance of TokenSyntax,
+  /// If we wanted to safely create the 0th child, an instance of RawTokenSyntax,
   /// then we ask the AtomicCache in that position to realize its value and
   /// cache it. This is safe because AtomicCache only ever mutates its cache
   /// one time -- the first initialization that wins a compare_exchange_strong.

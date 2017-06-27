@@ -31,7 +31,7 @@
 namespace swift {
 namespace syntax {
 
-using TokenPositionList = std::vector<std::pair<RC<TokenSyntax>,
+using TokenPositionList = std::vector<std::pair<RC<RawTokenSyntax>,
                                                 AbsolutePosition>>;
 
 /// Transforms a swift/AST into a swift/Syntax/RC<RawSyntax>.
@@ -96,7 +96,7 @@ public:
 /// Transform a legacy AST node to a full-fidelity `RC<RawSyntax>`.
 ///
 /// If an ASTNode's kind isn't covered by the transform, a `RC<RawSyntax>` for
-/// a SyntaxKind::Unknown will be returned containing all of the TokenSyntaxs that
+/// a SyntaxKind::Unknown will be returned containing all of the RawTokenSyntaxs that
 /// comprise the node.
 ///
 /// If the node isn't expressible in a `RC<RawSyntax>`, then `None` is returned.
@@ -108,14 +108,14 @@ transformAST(ASTNode Node,
              const TokenPositionList &Tokens);
 
 /// Do a binary search for a token at the given `Offset`.
-RC<TokenSyntax> findTokenSyntax(tok ExpectedKind,
+TokenSyntax findTokenSyntax(tok ExpectedKind,
                                 OwnedString ExpectedText,
                                 SourceManager &SourceMgr,
                                 SourceLoc Loc,
                                 unsigned BufferID,
                                 const TokenPositionList &Tokens);
 
-//ArrayRef<RC<TokenSyntax>>
+//ArrayRef<TokenSyntax>
 //syntax::tokensInRange(SourceRange Range, const TokenPositionList &Tokens);
 
 } // end namespace syntax
