@@ -20,8 +20,7 @@ import Foundation
 class AtomicCache<Value: AnyObject> {
   /// The cached pointer that will be filled in the first time `value` is
   /// accessed.
-  private var _cachedValue = UnsafeMutablePointer<AnyObject?>
-                                .allocate(capacity: 1)
+  private var _cachedValue: AnyObject?
 
   /// The value inside this cache. If the value has not been initialized when
   /// this value is requested, then the closure will be called and its resulting
@@ -31,24 +30,26 @@ class AtomicCache<Value: AnyObject> {
   /// - Parameter create: The closure that will return the fully realized value
   ///                     inside the cache.
   func value(_ create: () -> Value) -> Value {
-    // Perform an atomic load -- if we get a value, then return it.
-    if let _cached = _stdlib_atomicLoadARCRef(object: _cachedValue) {
-      _onFastPath()
-      return _cached as! Value
+    return withUnsafeMutablePointer(to: &_cachedValue) { ptr in
+      // Perform an atomic load -- if we get a value, then return it.
+      if let _cached = _stdlib_atomicLoadARCRef(object: ptr) {
+        _onFastPath()
+        return _cached as! Value
+      }
+
+      // Otherwise, create the value...
+      let value = create()
+
+      // ...and attempt to initialize the pointer with that value.
+      if _stdlib_atomicInitializeARCRef(object: ptr, desired: value) {
+        // If we won the race, just return the value we made.
+        return value
+      }
+
+      // Otherwise, perform _another_ load to get the up-to-date value,
+      // and let the one we just made die.
+      return _stdlib_atomicLoadARCRef(object: ptr) as! Value
     }
-
-    // Otherwise, create the value...
-    let value = create()
-
-    // ...and attempt to initialize the pointer with that value.
-    if _stdlib_atomicInitializeARCRef(object: _cachedValue, desired: value) {
-      // If we won the race, just return the value we made.
-      return value
-    }
-
-    // Otherwise, perform _another_ load to get the up-to-date value,
-    // and let the one we just made die.
-    return _stdlib_atomicLoadARCRef(object: _cachedValue) as! Value
   }
 
   /// Unsafely attempts to load the value and cast it to the appropriate
@@ -56,18 +57,8 @@ class AtomicCache<Value: AnyObject> {
   /// - note: Only for use in the debugger!
   @available(*, deprecated, message: "Only for use in the debugger.")
   var unsafeValue: Value? {
-    return _stdlib_atomicLoadARCRef(object: _cachedValue) as? Value
-  }
-
-  /// Creates a new AtomicCache that will hold the value returned by the
-  /// provided closure.
-  init() {
-    self._cachedValue.initialize(to: nil)
-  }
-
-  /// Free the underlying buffer.
-  deinit {
-    _cachedValue.deinitialize()
-    _cachedValue.deallocate(capacity: 1)
+    return withUnsafeMutablePointer(to: &_cachedValue) {
+      return _stdlib_atomicLoadARCRef(object: $0) as? Value
+    }
   }
 }
