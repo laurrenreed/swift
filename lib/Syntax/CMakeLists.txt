@@ -24,7 +24,7 @@ endforeach()
 
 add_swift_library(swiftSyntax STATIC
   ${generated_sources}
-  TokenSyntax.cpp
+  RawTokenSyntax.cpp
   LegacyASTTransformer.cpp
   Trivia.cpp
   RawSyntax.cpp
