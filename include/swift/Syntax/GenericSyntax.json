@@ -1,0 +1,142 @@
+{
+  "GenericParameterListSyntax": {
+    "kind": "SyntaxCollection",
+    "element": "Syntax"
+  },
+  "GenericWhereClauseSyntax": {
+    "comment": [
+      "generic-where-clause -> 'where' requirement-list"
+    ],
+    "kind": "Syntax",
+    "children": [
+      {
+        "WhereKeyword": {
+          "kind": "WhereTokenSyntax"
+        }
+      },
+      {
+        "RequirementList": {
+          "kind": "GenericRequirementListSyntax"
+        }
+      }
+    ]
+  },
+  "GenericRequirementListSyntax": {
+    "kind": "SyntaxCollection",
+    "element": "Syntax"
+  },
+  "SameTypeRequirementSyntax": {
+    "comment": [
+      "same-type-requirement -> type-identifier == type"
+    ],
+    "kind": "Syntax",
+    "children": [
+      {
+        "LeftTypeIdentifier": {
+          "kind": "TypeIdentifierSyntax"
+        }
+      },
+      {
+        "EqualityToken": {
+          "kind": "BinaryOperatorTokenSyntax"
+        }
+      },
+      {
+        "RightType": {
+          "kind": "TypeIdentifierSyntax"
+        }
+      },
+      {
+        "TrailingComma": {
+          "kind": "CommaTokenSyntax",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "GenericParameterSyntax": {
+    "comment": [
+      "generic-parameter -> type-name",
+      "                   | type-name : type-identifier",
+      "                   | type-name : protocol-composition-type"
+    ],
+    "kind": "Syntax",
+    "children": [
+      {
+        "TypeIdentifier": {
+          "kind": "TypeIdentifierSyntax"
+        }
+      },
+      {
+        "Colon": {
+          "kind": "ColonTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "InheritedType": {
+          "kind": "TypeSyntax",
+          "optional": true
+        }
+      },
+      {
+        "TrailingComma": {
+          "kind": "CommaTokenSyntax",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "GenericParameterClauseSyntax": {
+    "comment": [
+      "generic-parameter-clause -> '<' generic-parameter-list '>'"
+    ],
+    "kind": "Syntax",
+    "children": [
+      {
+        "LeftAngleToken": {
+          "kind": "LeftAngleTokenSyntax"
+        }
+      },
+      {
+        "GenericParameterList": {
+          "kind": "GenericParameterListSyntax"
+        }
+      },
+      {
+        "RightAngleToken": {
+          "kind": "RightAngleTokenSyntax"
+        }
+      }
+    ]
+  },
+  "ConformanceRequirementSyntax": {
+    "comment": [
+      "conformance-requirement -> type-identifier : type-identifier"
+    ],
+    "kind": "Syntax",
+    "children": [
+      {
+        "LeftTypeIdentifier": {
+          "kind": "TypeIdentifierSyntax"
+        }
+      },
+      {
+        "Colon": {
+          "kind": "ColonTokenSyntax"
+        }
+      },
+      {
+        "RightTypeIdentifier": {
+          "kind": "TypeIdentifierSyntax"
+        }
+      },
+      {
+        "TrailingComma": {
+          "kind": "CommaTokenSyntax",
+          "optional": true
+        }
+      }
+    ]
+  }
+}

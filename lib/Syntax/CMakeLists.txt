@@ -1,16 +1,14 @@
+include(SwiftSyntaxLibrary)
+
 add_swift_library(swiftSyntax STATIC
-  DeclSyntax.cpp
-  ExprSyntax.cpp
-  Format.cpp
+  SyntaxNodes.cpp.gyb
   RawTokenSyntax.cpp
-  GenericSyntax.cpp
   LegacyASTTransformer.cpp
   Trivia.cpp
   RawSyntax.cpp
-  StmtSyntax.cpp
   Syntax.cpp
-  SyntaxFactory.cpp
   SyntaxData.cpp
-  TypeSyntax.cpp
   UnknownSyntax.cpp
+  DEPENDS swift-syntax-all-generated-source
 )
+

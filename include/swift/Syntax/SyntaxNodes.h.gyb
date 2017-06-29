@@ -1,0 +1,80 @@
+%# -*- mode: C++ -*-
+%# Ignore the following admonition; it applies to the resulting .h file only
+//// Automatically Generated From SyntaxNodes.h.gyb.
+//// Do Not Edit Directly!
+//===---------------- SyntaxNodes.h - Syntax Node definitions -------------===//
+//
+// This source file is part of the Swift.org open source project
+//
+// Copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
+// Licensed under Apache License v2.0 with Runtime Library Exception
+//
+// See https://swift.org/LICENSE.txt for license information
+// See https://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
+//
+//===----------------------------------------------------------------------===//
+%{
+    from gyb_syntax_support import *
+    nodes = load_all_syntax_nodes()
+}%
+#include "swift/Syntax/Syntax.h"
+
+namespace swift {
+namespace syntax {
+
+% for node in nodes:
+class ${node.name};
+% end
+
+% for base in ["Stmt", "Decl", "Pattern", "Type"]: 
+public class ${base}Syntax final : Syntax {
+  virtual void validate() const override {}
+public:
+  ${base}Syntax(const RC<SyntaxData> Root, const SyntaxData *Data)
+    : Syntax(Root, Data) {}
+
+  static bool classof(const Syntax *S) {
+    return S->getKind() == SyntaxKind::${node.capital_syntax_kind};
+  }
+}
+% end
+
+% for node in nodes:
+%   if node.is_syntax_collection():
+using ${node.name} = SyntaxCollection<SyntaxKind::${node.collection_element_kind}>;
+
+%   else:
+public class ${node.name} final : public ${node.kind} {
+%     if node.has_children():
+  enum Cursor : uint32_t {
+%       for child in node.children:
+    ${child.capital_name},
+%       end
+  }
+%     end
+  virtual void validate() const override;
+public:
+  ${node.name}(const RC<SyntaxData> Root, const SyntaxData *Data)
+    : ${node.kind}(Root, Data) {}
+
+%     for child in node.children:
+%       if child.is_optional:
+  llvm::Optional<${child.type_name}> get${child.capital_name}();
+%       else:
+  ${child.type_name} get${child.capital_name}();
+%       end
+
+  ${node.name} with${child.capital_name}(${child.type_name} New${child.type_name});
+
+%     end
+  static bool classof(const Syntax *S) {
+    return S->getKind() == SyntaxKind::${node.capital_syntax_kind};
+  }
+  
+}
+
+%   end
+% end
+
+}
+}

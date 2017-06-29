@@ -847,7 +847,6 @@ if(NOT DEFINED SWIFT_API_NOTES_INPUTS)
 endif()
 
 add_custom_target(swift-syntax-all-generated-source)
-include(AddSwiftSyntaxTableGen)
 
 # Add all of the subdirectories, where we actually do work.
 if(SWIFT_INCLUDE_TOOLS)

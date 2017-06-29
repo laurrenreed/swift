@@ -1,0 +1,65 @@
+%# -*- mode: C++ -*-
+%# Ignore the following admonition; it applies to the resulting .cpp file only
+//// Automatically Generated From SyntaxNodes.cpp.gyb.
+//// Do Not Edit Directly!
+//===---------------- SyntaxNodes.h - Syntax Node definitions -------------===//
+//
+// This source file is part of the Swift.org open source project
+//
+// Copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
+// Licensed under Apache License v2.0 with Runtime Library Exception
+//
+// See https://swift.org/LICENSE.txt for license information
+// See https://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
+//
+//===----------------------------------------------------------------------===//
+%{
+    from gyb_syntax_support import *
+    nodes = load_all_syntax_nodes()
+    tokens = load_syntax_tokens()
+}%
+#include "swift/Syntax/SyntaxNodes.h"
+
+namespace swift {
+namespace syntax {
+
+% for node in nodes:
+void ${node.name}::validate() const {
+  if (!Data || !Data->Raw) return;
+  auto Raw = Data->Raw;
+  assert(Raw->Layout.size() == ${len(node.children)});
+%   for child in node.children:
+%     if child.token_choices:
+%       choices = ", ".join("tok::" + tokens[choice].kind for choice in child.token_choices)
+  syntax_assert_child_token(Raw, ${child.capital_name}, ${choices});
+%     elif child.token_kind and child.token_kind != "TokenSyntax": 
+  syntax_assert_child_token(Raw, ${child.capital_name}, tok::${tokens[child.token_kind].kind});
+%     end
+%   end
+}
+% end
+
+%   for child in node.children:
+%     if child.is_optional:
+llvm::Optional<${child.type_name}> ${node.name}::get${child.capital_name}() {
+  if (Raw->at(Cursor::${child.capital_name})->isMising()) {
+    return llvm::None;
+  }
+  return llvm::Optional<${child.type_name}> {
+    ${child.type_name} { Root, Data.getChild(Cursor::${child.capital_name}).get() }
+  };
+}
+%     else:
+${child.type_name} ${node.name}::get${child.capital_name}() {
+  return ${child.type_name} { Root, Data.getChild(Cursor::${child.capital_name}).get() };
+}
+%     end
+
+${node.name} ${node.name}::with${child.capital_name}(${child.type_name} New${child.type_name}) {
+  return data->replaceChild<${child.type_name}>(New${child.type_name}.getRaw());
+}
+
+%   end
+% end
+}
+}

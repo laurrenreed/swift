@@ -1,0 +1,66 @@
+%# -*- mode: C++ -*-
+%# Ignore the following admonition; it applies to the resulting .h file only
+//// Automatically Generated From SyntaxFactory.h.gyb.
+//// Do Not Edit Directly!
+//===------------- SyntaxFactory.h - Syntax Factory definition ------------===//
+//
+// This source file is part of the Swift.org open source project
+//
+// Copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
+// Licensed under Apache License v2.0 with Runtime Library Exception
+//
+// See https://swift.org/LICENSE.txt for license information
+// See https://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
+//
+//===----------------------------------------------------------------------===//
+//
+// This file defines the SyntaxFactory, one of the most important client-facing
+// types in lib/Syntax and likely to be very commonly used.
+//
+// Effectively a namespace, SyntaxFactory is never instantiated, but is *the*
+// one-stop shop for making new Syntax nodes. Putting all of these into a
+// collection of static methods provides a single point of API lookup for
+// clients' convenience and also allows the library to hide all of the
+// constructors for all Syntax nodes, as the SyntaxFactory is friend to all.
+//
+//===----------------------------------------------------------------------===//
+%{
+    from gyb_syntax_support import *
+    nodes = load_all_syntax_nodes()
+}%
+#include "swift/Syntax/SyntaxNodes.h"
+#include "swift/Syntax/Trivia.h"
+#include "llvm/ADT/ArrayRef.h"
+
+#include <vector>
+
+namespace swift {
+namespace syntax {
+
+/// The Syntax factory - the one-stop shop for making new Syntax nodes.
+struct SyntaxFactory {
+  /// Make any kind of token.
+  static TokenSyntax
+  makeToken(tok Kind, OwnedString Text, SourcePresence Presence,
+            const Trivia &LeadingTrivia, const Trivia &TrailingTrivia);
+
+  /// Collect a list of tokens into a piece of "unknown" syntax.
+  static UnknownSyntax
+  makeUnknownSyntax(llvm::ArrayRef<TokenSyntax> Tokens);
+
+% for node in nodes:
+%   if node.has_children():
+  static ${node.name} make${node.capital_syntax_kind}(
+%     for child in node.children:
+    ${child.type_name} ${child.name},
+%     end
+  );
+%   end
+
+  static ${node.name} makeBlank${node.capital_syntax_kind}();
+
+% end
+
+};
+}
+}

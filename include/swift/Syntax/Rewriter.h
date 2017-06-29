@@ -36,12 +36,6 @@ namespace syntax {
 /// The base class for creating Swift Syntax rewriters, for more complex
 /// or formal syntactic transformations.
 struct SyntaxRewriter {
-#define SYNTAX(Id, Parent) \
-  virtual Id##Syntax rewrite##Id(Id##Syntax Node) { \
-    return Node; \
-  }
-#define SYNTAX_COLLECTION(Id, Element) SYNTAX(Id, {})
-#include "swift/Syntax/SyntaxKinds.def"
   virtual ~SyntaxRewriter() = default;
 };
 

@@ -1,0 +1,242 @@
+{
+  "EnumCasePatternSyntax": {
+    "comment": [
+      "An enum case pattern.",
+      "Foo.baz(let x)"
+    ],
+    "kind": "PatternSyntax",
+    "children": [
+      {
+        "TypeIdentifier": {
+          "kind": "TypeIdentifierSyntax",
+          "optional": true
+        }
+      },
+      {
+        "Period": {
+          "kind": "PeriodTokenSyntax"
+        }
+      },
+      {
+        "CaseName": {
+          "kind": "IdentifierTokenSyntax"
+        }
+      },
+      {
+        "AssociatedTuple": {
+          "kind": "TuplePatternSyntax",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "IsTypePatternSyntax": {
+    "comment": [
+      "An `is` pattern.",
+      "case is (Int, Int):"
+    ],
+    "kind": "PatternSyntax",
+    "children": [
+      {
+        "IsKeyword": {
+          "kind": "IsTokenSyntax"
+        }
+      },
+      {
+        "Type": {
+          "kind": "TypeSyntax"
+        }
+      }
+    ]
+  },
+  "OptionalPatternSyntax": {
+    "comment": [
+      "An optional pattern.",
+      "let x? = 4",
+      "    ^~"
+    ],
+    "kind": "PatternSyntax",
+    "children": [
+      {
+        "Identifier": {
+          "kind": "IdentifierTokenSyntax"
+        }
+      },
+      {
+        "QuestionMark": {
+          "kind": "QuestionMarkPostfixTokenSyntax"
+        }
+      }
+    ]
+  },
+  "IdentifierPatternSyntax": {
+    "comment": [
+      "A pattern that is just an identifier."
+    ],
+    "kind": "PatternSyntax",
+    "children": [
+      {
+        "Identifier": {
+          "kind": "IdentifierTokenSyntax"
+        }
+      },
+      {
+        "TypeAnnotation": {
+          "kind": "TypeAnnotationSyntax",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "AsTypePatternSyntax": {
+    "comment": [
+      "An `as` pattern.",
+      "case let foo as (Int, Int):",
+      "     ^~~~~~~~~~~~~~~~~~~~~"
+    ],
+    "kind": "PatternSyntax",
+    "children": [
+      {
+        "Pattern": {
+          "kind": "PatternSyntax"
+        }
+      },
+      {
+        "AsKeyword": {
+          "kind": "AsTokenSyntax"
+        }
+      },
+      {
+        "Type": {
+          "kind": "TypeSyntax"
+        }
+      }
+    ]
+  },
+  "TuplePatternSyntax": {
+    "comment": [
+      "A tuple pattern.",
+      "let (label: x, y) = (4, 5)",
+      "    ^~~~~~~~~~~~~"
+    ],
+    "kind": "PatternSyntax",
+    "children": [
+      {
+        "OpenParen": {
+          "kind": "LeftParenTokenSyntax"
+        }
+      },
+      {
+        "Elements": {
+          "kind": "TuplePatternElementListSyntax"
+        }
+      },
+      {
+        "CloseParen": {
+          "kind": "RightParenTokenSyntax"
+        }
+      },
+      {
+        "TypeAnnotation": {
+          "kind": "TypeAnnotationSyntax",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "WildcardPatternSyntax": {
+    "comment": [
+      "A wildcard (_) pattern."
+    ],
+    "kind": "PatternSyntax",
+    "children": [
+      {
+        "Wildcard": {
+          "kind": "WildcardTokenSyntax"
+        }
+      },
+      {
+        "TypeAnnotation": {
+          "kind": "TypeAnnotationSyntax",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "TuplePatternElementSyntax": {
+    "comment": [
+      "A tuple pattern element.",
+      "(label: x, y)",
+      " ^~~~~~~~  ^"
+    ],
+    "kind": "Syntax",
+    "children": [
+      {
+        "LabelName": {
+          "kind": "IdentifierTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "LabelColon": {
+          "kind": "ColonTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "Pattern": {
+          "kind": "PatternSyntax"
+        }
+      },
+      {
+        "Comma": {
+          "kind": "CommaTokenSyntax"
+        }
+      }
+    ]
+  },
+  "ExpressionPatternSyntax": {
+    "comment": [
+      "A pattern that is an expression."
+    ],
+    "kind": "PatternSyntax",
+    "children": [
+      {
+        "Expression": {
+          "kind": "ExprSyntax"
+        }
+      }
+    ]
+  },
+  "TuplePatternElementListSyntax": {
+    "comment": [
+      "A list of patterns in a tuple."
+    ],
+    "kind": "SyntaxCollection",
+    "element": "TuplePatternElementSyntax"
+  },
+  "ValueBindingPatternSyntax": {
+    "comment": [
+      "A binding pattern.",
+      "let (x, y) = 5",
+      "^~~~~~~~~~"
+    ],
+    "kind": "PatternSyntax",
+    "children": [
+      {
+        "LetOrVar": {
+          "kind": "TokenSyntax",
+          "choices": [
+            "LetTokenSyntax",
+            "VarTokenSyntax"
+          ]
+        }
+      },
+      {
+        "ValuePatternSyntax": {
+          "kind": "PatternSyntax"
+        }
+      }
+    ]
+  }
+}

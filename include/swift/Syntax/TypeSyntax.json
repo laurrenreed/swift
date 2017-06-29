@@ -1,0 +1,393 @@
+{
+  "MetatypeTypeSyntax": {
+    "comment": [
+      "A metatype type.",
+      "Foo.Type",
+      "Foo.Protocol"
+    ],
+    "kind": "TypeSyntax",
+    "children": [
+      {
+        "TypeValue": {
+          "kind": "TypeSyntax"
+        }
+      },
+      {
+        "Period": {
+          "kind": "PeriodTokenSyntax"
+        }
+      },
+      {
+        "TypeOrProtocol": {
+          "kind": "IdentifierTokenSyntax"
+        }
+      }
+    ]
+  },
+  "DictionaryTypeSyntax": {
+    "comment": [
+      "A dictionary type.",
+      "[Int: Bool]"
+    ],
+    "kind": "TypeSyntax",
+    "children": [
+      {
+        "LeftSquare": {
+          "kind": "LeftSquareTokenSyntax"
+        }
+      },
+      {
+        "KeyType": {
+          "kind": "TypeSyntax"
+        }
+      },
+      {
+        "Colon": {
+          "kind": "ColonTokenSyntax"
+        }
+      },
+      {
+        "ValueType": {
+          "kind": "TypeSyntax"
+        }
+      },
+      {
+        "RightSquare": {
+          "kind": "RightSquareTokenSyntax"
+        }
+      }
+    ]
+  },
+  "FunctionTypeSyntax": {
+    "comment": [
+      "A full function type.",
+      "@autoclosure (Int, Bool) -> Bool"
+    ],
+    "kind": "TypeSyntax",
+    "children": [
+      {
+        "TypeAttributes": {
+          "kind": "AttributeListSyntax"
+        }
+      },
+      {
+        "OpenParen": {
+          "kind": "LeftParenTokenSyntax"
+        }
+      },
+      {
+        "ArgumentList": {
+          "kind": "FunctionTypeArgumentListSyntax"
+        }
+      },
+      {
+        "CloseParen": {
+          "kind": "RightParenTokenSyntax"
+        }
+      },
+      {
+        "ThrowsOrRethrows": {
+          "kind": "TokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "Arrow": {
+          "kind": "ArrowTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "ReturnType": {
+          "kind": "TypeSyntax",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "TupleTypeSyntax": {
+    "comment": [
+      "The syntax for a full tuple type.",
+      "(x: Int, y: Bool)"
+    ],
+    "kind": "TypeSyntax",
+    "children": [
+      {
+        "LeftParen": {
+          "kind": "LeftParenTokenSyntax"
+        }
+      },
+      {
+        "ElementList": {
+          "kind": "TupleTypeElementListSyntax"
+        }
+      },
+      {
+        "RightParen": {
+          "kind": "RightParenTokenSyntax"
+        }
+      }
+    ]
+  },
+  "TupleTypeElementSyntax": {
+    "comment": [
+      "A tuple type element. It may be labelled.",
+      "(x: Int, y: @autoclosure (Int) -> Bool)",
+      " ^~~~~~~ ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    ],
+    "kind": "Syntax",
+    "children": [
+      {
+        "Label": {
+          "kind": "IdentifierTokenSyntax"
+        }
+      },
+      {
+        "Colon": {
+          "kind": "ColonTokenSyntax"
+        }
+      },
+      {
+        "TypeAnnotation": {
+          "kind": "TypeAnnotationSyntax"
+        }
+      },
+      {
+        "Comma": {
+          "kind": "CommaTokenSyntax"
+        }
+      }
+    ]
+  },
+  "ArrayTypeSyntax": {
+    "comment": [
+      "An array type.",
+      "[Int]"
+    ],
+    "kind": "TypeSyntax",
+    "children": [
+      {
+        "LeftBracket": {
+          "kind": "LeftSquareTokenSyntax"
+        }
+      },
+      {
+        "ElementType": {
+          "kind": "TypeSyntax"
+        }
+      },
+      {
+        "RightBracket": {
+          "kind": "RightSquareTokenSyntax"
+        }
+      }
+    ]
+  },
+  "TypeAnnotationSyntax": {
+    "comment": [
+      "A type annotation for a variable.",
+      "(x: @autoclosure (Int) -> Bool)",
+      "    ^~~~~~~~~~~~~~~~~~~~~~~~~~"
+    ],
+    "kind": "Syntax",
+    "children": [
+      {
+        "Attributes": {
+          "kind": "AttributeListSyntax"
+        }
+      },
+      {
+        "InOut": {
+          "kind": "InoutTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "Type": {
+          "kind": "TypeSyntax"
+        }
+      }
+    ]
+  },
+  "ProtocolCompositionElementListSyntax": {
+    "comment": [
+      "A protocol composition type is a list of protocol composition elements."
+    ],
+    "kind": "SyntaxCollection",
+    "element": "ProtocolCompositionElementSyntax"
+  },
+  "TupleTypeElementListSyntax": {
+    "comment": [
+      "A list of tuple type elements."
+    ],
+    "kind": "SyntaxCollection",
+    "element": "TupleTypeElementSyntax"
+  },
+  "ImplicitlyUnwrappedOptionalTypeSyntax": {
+    "comment": [
+      "An implicitly unwrapped optional type.",
+      "Int!"
+    ],
+    "kind": "TypeSyntax",
+    "children": [
+      {
+        "ValueType": {
+          "kind": "TypeSyntax"
+        }
+      },
+      {
+        "ExclamationMark": {
+          "kind": "ExclamationMarkTokenSyntax"
+        }
+      }
+    ]
+  },
+  "ProtocolCompositionElementSyntax": {
+    "comment": [
+      "The element of a protocol composition",
+      "Sequence & Equatable",
+      "^~~~~~~~~~ ^~~~~~~~~"
+    ],
+    "kind": "Syntax",
+    "children": [
+      {
+        "ProtocolType": {
+          "kind": "TypeIdentifierSyntax"
+        }
+      },
+      {
+        "Ampersand": {
+          "kind": "AmpersandTokenSyntax"
+        }
+      }
+    ]
+  },
+  "GenericArgumentClauseSyntax": {
+    "comment": [
+      "A full generic argument clause, comprising all elements.",
+      "Dictionary<Int, String>",
+      "           ^~~~~~~~~~~"
+    ],
+    "kind": "SyntaxCollection",
+    "element": "GenericArgumentClauseElementSyntax"
+  },
+  "GenericArgumentClauseElementSyntax": {
+    "comment": [
+      "An element of a generic argument.",
+      "Dictionary<Int, String>",
+      "           ^~~~ ^~~~~~"
+    ],
+    "kind": "Syntax",
+    "children": [
+      {
+        "GenericArgument": {
+          "kind": "TypeSyntax"
+        }
+      },
+      {
+        "Comma": {
+          "kind": "CommaTokenSyntax"
+        }
+      }
+    ]
+  },
+  "FunctionTypeArgumentSyntax": {
+    "comment": [
+      "A function parameter type.",
+      "func foo(_ x: Bool, y: Int) {",
+      "         ^~~~~~~~~~ ^~~~~~"
+    ],
+    "kind": "Syntax",
+    "children": [
+      {
+        "ExternalParameterName": {
+          "kind": "IdentifierTokenSyntax"
+        }
+      },
+      {
+        "LocalParameterName": {
+          "kind": "IdentifierTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "Colon": {
+          "kind": "ColonTokenSyntax"
+        }
+      },
+      {
+        "TypeAnnotation": {
+          "kind": "TypeAnnotationSyntax"
+        }
+      }
+    ]
+  },
+  "OptionalTypeSyntax": {
+    "comment": [
+      "An optional type.",
+      "Int?"
+    ],
+    "kind": "TypeSyntax",
+    "children": [
+      {
+        "ValueType": {
+          "kind": "TypeSyntax"
+        }
+      },
+      {
+        "QuestionMark": {
+          "kind": "QuestionMarkPostfixTokenSyntax"
+        }
+      }
+    ]
+  },
+  "TypeIdentifierSyntax": {
+    "comment": [
+      "A type that represents a possibly nested type identifier",
+      "Foo.Bar<Int>"
+    ],
+    "kind": "Syntax",
+    "children": [
+      {
+        "TypeName": {
+          "kind": "IdentifierTokenSyntax"
+        }
+      },
+      {
+        "GenericArgumentClause": {
+          "kind": "GenericArgumentClauseSyntax",
+          "optional": true
+        }
+      },
+      {
+        "Period": {
+          "kind": "PeriodTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "TypeIdentifier": {
+          "kind": "TypeIdentifierSyntax",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "FunctionTypeArgumentListSyntax": {
+    "comment": [
+      "A list of function parameter types."
+    ],
+    "kind": "SyntaxCollection",
+    "element": "FunctionTypeArgumentSyntax"
+  },
+  "ProtocolCompositionTypeSyntax": {
+    "kind": "TypeSyntax",
+    "children": [
+      {
+        "Elements": {
+          "kind": "ProtocolCompositionElementListSyntax"
+        }
+      }
+    ]
+  }
+}

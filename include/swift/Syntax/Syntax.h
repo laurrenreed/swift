@@ -57,9 +57,6 @@ class Syntax {
   friend class LegacyASTTransformer;
   friend class sema::Semantics;
 
-#define SYNTAX(Id, Parent) friend class Id##Syntax;
-#include "swift/Syntax/SyntaxKinds.def"
-
 protected:
   /// A strong reference to the root node of the tree in which this piece of
   /// syntax resides.

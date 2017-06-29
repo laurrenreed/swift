@@ -1,0 +1,468 @@
+{
+  "TypeAliasDeclSyntax": {
+    "comment": [
+      "typealias-declaration -> attributes? access-level-modifier? 'typealias'",
+      "                         typealias-name generic-parameter-clause?",
+      "                         typealias-assignment",
+      "typealias-name -> identifier",
+      "typealias-assignment -> = type"
+    ],
+    "kind": "DeclSyntax",
+    "children": [
+      {
+        "Attributes": {
+          "kind": "AttributeListSyntax",
+          "optional": true
+        }
+      },
+      {
+        "AccessLevelModifier": {
+          "kind": "AccessLevelModifierSyntax",
+          "optional": true
+        }
+      },
+      {
+        "TypealiasKeyword": {
+          "kind": "TypealiasTokenSyntax"
+        }
+      },
+      {
+        "Name": {
+          "kind": "IdentifierTokenSyntax"
+        }
+      },
+      {
+        "Equals": {
+          "kind": "BinaryOperatorTokenSyntax"
+        }
+      },
+      {
+        "Type": {
+          "kind": "TypeSyntax"
+        }
+      }
+    ]
+  },
+  "FunctionParameterListSyntax": {
+    "kind": "SyntaxCollection",
+    "element": "FunctionParameterSyntax"
+  },
+  "FunctionSignatureSyntax": {
+    "comment": [
+      "function-signature ->",
+      "  '(' parameter-list? ')' (throws | rethrows)? '->'? attributes? type?"
+    ],
+    "kind": "Syntax",
+    "children": [
+      {
+        "LeftParen": {
+          "kind": "LeftParenTokenSyntax"
+        }
+      },
+      {
+        "ParameterList": {
+          "kind": "FunctionParameterListSyntax"
+        }
+      },
+      {
+        "RightParen": {
+          "kind": "RightParenTokenSyntax"
+        }
+      },
+      {
+        "ThrowsOrRethrows": {
+          "kind": "TokenSyntax",
+          "optional": true,
+          "choices": [
+            "ThrowsTokenSyntax",
+            "RethrowsTokenSyntax"
+          ]
+        }
+      },
+      {
+        "Arrow": {
+          "kind": "ArrowTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "ReturnTypeAttributes": {
+          "kind": "AttributeListSyntax",
+          "optional": true
+        }
+      },
+      {
+        "ReturnType": {
+          "kind": "TypeSyntax",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "ElseDirectiveClauseSyntax": {
+    "comment": [
+      "An #elseif directive of a #if configuration",
+      "#elseif true",
+      "    // statements..."
+    ],
+    "kind": "Syntax",
+    "children": [
+      {
+        "PoundElseif": {
+          "kind": "PoundElseifTokenSyntax"
+        }
+      },
+      {
+        "Condition": {
+          "kind": "ExprSyntax"
+        }
+      },
+      {
+        "Body": {
+          "kind": "StatementListSyntax"
+        }
+      }
+    ]
+  },
+  "IfConfigDeclSyntax": {
+    "comment": [
+      "A #if configuration statement.",
+      "#if DEBUG",
+      "    // statements",
+      "#elseif NDEBUG",
+      "     // statements",
+      "#else",
+      "     // statements",
+      "#endif"
+    ],
+    "kind": "DeclSyntax",
+    "children": [
+      {
+        "PoundIf": {
+          "kind": "PoundIfTokenSyntax"
+        }
+      },
+      {
+        "Condition": {
+          "kind": "ExprSyntax"
+        }
+      },
+      {
+        "Body": {
+          "kind": "StatementListSyntax"
+        }
+      },
+      {
+        "ElseifDirectiveClauses": {
+          "kind": "ElseifDirectiveClauseListSyntax"
+        }
+      },
+      {
+        "ElseClause": {
+          "kind": "ElseDirectiveClauseSyntax",
+          "optional": true
+        }
+      },
+      {
+        "PoundEndif": {
+          "kind": "PoundEndifTokenSyntax"
+        }
+      }
+    ]
+  },
+  "StructMembersSyntax": {
+    "comment": [
+      "struct-members -> struct-member struct-members?",
+      "struct-member -> declaration | compiler-control-statement"
+    ],
+    "kind": "SyntaxCollection",
+    "element": "DeclSyntax"
+  },
+  "SimpleModifierSyntax": {
+    "kind": "Syntax",
+    "children": [
+      {
+        "Name": {
+          "kind": "IdentifierTokenSyntax"
+        }
+      }
+    ]
+  },
+  "TypeInheritanceClauseSyntax": {
+    "comment": [
+      "type-inheritance-clause -> ':' type"
+    ],
+    "kind": "Syntax",
+    "children": [
+      {
+        "Colon": {
+          "kind": "ColonTokenSyntax"
+        }
+      },
+      {
+        "InheritedType": {
+          "kind": "TypeSyntax"
+        }
+      }
+    ]
+  },
+  "StructDeclSyntax": {
+    "comment": [
+      "struct-declaration -> attributes? access-level-modifier?",
+      "                      'struct' struct-name",
+      "                      generic-parameter-clause? type-inheritance-clause?",
+      "                      generic-where-clause?",
+      "                      '{' struct-members ''",
+      "struct-name -> identifier"
+    ],
+    "kind": "DeclSyntax",
+    "children": [
+      {
+        "Attributes": {
+          "kind": "AttributeListSyntax",
+          "optional": true
+        }
+      },
+      {
+        "AccessLevelModifier": {
+          "kind": "AccessLevelModifierSyntax",
+          "optional": true
+        }
+      },
+      {
+        "StructKeyword": {
+          "kind": "StructTokenSyntax"
+        }
+      },
+      {
+        "Name": {
+          "kind": "IdentifierTokenSyntax"
+        }
+      },
+      {
+        "GenericParameterClause": {
+          "kind": "GenericParameterClauseSyntax",
+          "optional": true
+        }
+      },
+      {
+        "InheritanceClause": {
+          "kind": "TypeInheritanceClauseSyntax",
+          "optional": true
+        }
+      },
+      {
+        "GenericWhereClause": {
+          "kind": "GenericWhereClauseSyntax",
+          "optional": true
+        }
+      },
+      {
+        "LeftBrace": {
+          "kind": "LeftBraceTokenSyntax"
+        }
+      },
+      {
+        "Members": {
+          "kind": "StructMembersSyntax"
+        }
+      },
+      {
+        "RightBrace": {
+          "kind": "RightBraceTokenSyntax"
+        }
+      }
+    ]
+  },
+  "FunctionParameterSyntax": {
+    "comment": [
+      "parameter ->",
+      "external-parameter-name? local-parameter-name ':'",
+      "  type '...'? '='? expression? ','?"
+    ],
+    "kind": "Syntax",
+    "children": [
+      {
+        "ExternalName": {
+          "kind": "IdentifierTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "LocalName": {
+          "kind": "IdentifierTokenSyntax"
+        }
+      },
+      {
+        "Colon": {
+          "kind": "ColonTokenSyntax"
+        }
+      },
+      {
+        "Type": {
+          "kind": "TypeSyntax"
+        }
+      },
+      {
+        "Ellipsis": {
+          "kind": "TokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "DefaultEqual": {
+          "kind": "BinaryOperatorTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "DefaultExpression": {
+          "kind": "ExprSyntax",
+          "optional": true
+        }
+      },
+      {
+        "TrailingComma": {
+          "kind": "CommaTokenSyntax",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "ModifierListSyntax": {
+    "comment": [
+      "declaration-modifier -> access-level-modifier",
+      "                      | mutation-modifier",
+      "                      | 'class'",
+      "                      | 'convenience'",
+      "                      | 'dynamic'",
+      "                      | 'final'",
+      "                      | 'infix'",
+      "                      | 'lazy'",
+      "                      | 'optional'",
+      "                      | 'override'",
+      "                      | 'postfix'",
+      "                      | 'prefix'",
+      "                      | 'required'",
+      "                      | 'static'",
+      "                      | 'unowned'",
+      "                      | 'unowned(safe)'",
+      "                      | 'unowned(unsafe)'",
+      "                      | 'weak'",
+      "mutation-modifier -> 'mutating' | 'nonmutating'"
+    ],
+    "kind": "SyntaxCollection",
+    "element": "Syntax"
+  },
+  "FunctionDeclSyntax": {
+    "kind": "DeclSyntax",
+    "children": [
+      {
+        "Attributes": {
+          "kind": "AttributeListSyntax",
+          "optional": true
+        }
+      },
+      {
+        "Modifiers": {
+          "kind": "ModifierListSyntax",
+          "optional": true
+        }
+      },
+      {
+        "FuncKeyword": {
+          "kind": "FuncTokenSyntax"
+        }
+      },
+      {
+        "Identifier": {
+          "kind": "IdentifierTokenSyntax"
+        }
+      },
+      {
+        "GenericParameterClause": {
+          "kind": "GenericParameterClauseSyntax",
+          "optional": true
+        }
+      },
+      {
+        "Signature": {
+          "kind": "FunctionSignatureSyntax"
+        }
+      },
+      {
+        "GenericWhereClause": {
+          "kind": "GenericWhereClauseSyntax",
+          "optional": true
+        }
+      },
+      {
+        "Body": {
+          "kind": "CodeBlockSyntax"
+        }
+      }
+    ]
+  },
+  "ElseifDirectiveClauseListSyntax": {
+    "comment": [
+      "A list of possible #if directive clauses."
+    ],
+    "kind": "SyntaxCollection",
+    "element": "ElseifDirectiveClause"
+  },
+  "ElseDirectiveClause": {
+    "comment": [
+      "A #else directive of a #if configuration.",
+      "#else",
+      "    // statements..."
+    ],
+    "kind": "Syntax",
+    "children": [
+      {
+        "PoundElse": {
+          "kind": "PoundElseTokenSyntax"
+        }
+      },
+      {
+        "Body": {
+          "kind": "StatementListSyntax"
+        }
+      }
+    ]
+  },
+  "AccessLevelModifierSyntax": {
+    "comment": [
+      "access-level-modifier -> 'private' | 'private' '(' 'set' ')'",
+      "                       | 'fileprivate' | 'fileprivate' '(' 'set' ')'",
+      "                       | 'internal' | 'internal' '(' 'set' ')'",
+      "                       | 'public' | 'public' '(' 'set' ')'",
+      "                       | 'open' | 'open' '(' 'set' ')'"
+    ],
+    "kind": "Syntax",
+    "children": [
+      {
+        "Name": {
+          "kind": "IdentifierTokenSyntax"
+        }
+      },
+      {
+        "OpenParen": {
+          "kind": "LeftParenTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "Modifier": {
+          "kind": "IdentifierTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "CloseParen": {
+          "kind": "RightParenTokenSyntax",
+          "optional": true
+        }
+      }
+    ]
+  }
+}

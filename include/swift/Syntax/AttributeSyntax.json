@@ -1,0 +1,74 @@
+{
+  "AttributeListSyntax": {
+    "comment": [
+      "Represents a list of attributes that can appear on a declaration."
+    ],
+    "kind": "SyntaxCollection",
+    "element": "AttributeSyntax"
+  },
+  "BalancedTokensSyntax": {
+    "comment": [
+      "Represents any Syntax node balanced between braces, parens, or brackets.",
+      "[x] (x, y) { x }"
+    ],
+    "kind": "Syntax",
+    "children": [
+      {
+        "LeftMatch": {
+          "kind": "TokenSyntax"
+        }
+      },
+      {
+        "BalancedTokenSyntaxs": {
+          "kind": "AttributeArgumentListSyntax"
+        }
+      },
+      {
+        "RightMatch": {
+          "kind": "TokenSyntax"
+        }
+      }
+    ]
+  },
+  "AttributeSyntax": {
+    "comment": [
+      "Represents the full declaration of an attribute:",
+      "@available(*, unavailable, message: \"Unavailable.\")"
+    ],
+    "kind": "Syntax",
+    "children": [
+      {
+        "AtSign": {
+          "kind": "AtSignTokenSyntax"
+        }
+      },
+      {
+        "AttributeName": {
+          "kind": "IdentifierTokenSyntax"
+        }
+      },
+      {
+        "OpenParen": {
+          "kind": "LeftParenTokenSyntax"
+        }
+      },
+      {
+        "AttributeArguments": {
+          "kind": "AttributeArgumentListSyntax"
+        }
+      },
+      {
+        "CloseParen": {
+          "kind": "RightParenTokenSyntax"
+        }
+      }
+    ]
+  },
+  "AttributeArgumentListSyntax": {
+    "comment": [
+      "A collection of argument list elements."
+    ],
+    "kind": "SyntaxCollection",
+    "element": "Syntax"
+  }
+}

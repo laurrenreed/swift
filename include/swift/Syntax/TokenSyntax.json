@@ -1,0 +1,244 @@
+{
+  "PoundColumnTokenSyntax": {
+    "kind": "pound_column",
+    "keyword": true
+  },
+  "StructTokenSyntax": {
+    "kind": "kw_struct",
+    "keyword": true
+  },
+  "RightAngleTokenSyntax": {
+    "kind": "r_angle"
+  },
+  "InTokenSyntax": {
+    "kind": "kw_in",
+    "keyword": true
+  },
+  "ReturnTokenSyntax": {
+    "kind": "kw_return",
+    "keyword": true
+  },
+  "RightBraceTokenSyntax": {
+    "kind": "r_brace"
+  },
+  "PrefixOperatorTokenSyntax": {
+    "kind": "oper_prefix"
+  },
+  "IdentifierTokenSyntax": {
+    "kind": "identifier"
+  },
+  "PoundLineTokenSyntax": {
+    "kind": "pound_line",
+    "keyword": true
+  },
+  "PoundFileTokenSyntax": {
+    "kind": "pound_file",
+    "keyword": true
+  },
+  "IfTokenSyntax": {
+    "kind": "kw_if",
+    "keyword": true
+  },
+  "LeftSquareTokenSyntax": {
+    "kind": "l_square"
+  },
+  "PoundFunctionTokenSyntax": {
+    "kind": "pound_function",
+    "keyword": true
+  },
+  "SwitchTokenSyntax": {
+    "kind": "kw_switch",
+    "keyword": true
+  },
+  "RethrowsTokenSyntax": {
+    "kind": "kw_rethrows",
+    "keyword": true
+  },
+  "PoundEndifTokenSyntax": {
+    "kind": "pound_endif",
+    "keyword": true
+  },
+  "RightParenTokenSyntax": {
+    "kind": "r_paren"
+  },
+  "PeriodTokenSyntax": {
+    "kind": "period"
+  },
+  "ForTokenSyntax": {
+    "kind": "kw_for",
+    "keyword": true
+  },
+  "GuardTokenSyntax": {
+    "kind": "kw_guard",
+    "keyword": true
+  },
+  "LeftParenTokenSyntax": {
+    "kind": "l_paren"
+  },
+  "RepeatTokenSyntax": {
+    "kind": "kw_repeat",
+    "keyword": true
+  },
+  "FuncTokenSyntax": {
+    "kind": "kw_func",
+    "keyword": true
+  },
+  "ColonTokenSyntax": {
+    "kind": "colon"
+  },
+  "ThrowTokenSyntax": {
+    "kind": "kw_throw",
+    "keyword": true
+  },
+  "AsTokenSyntax": {
+    "kind": "kw_as",
+    "keyword": true
+  },
+  "PoundElseifTokenSyntax": {
+    "kind": "pound_elseif",
+    "keyword": true
+  },
+  "FallthroughTokenSyntax": {
+    "kind": "kw_fallthrough",
+    "keyword": true
+  },
+  "PostfixOperatorTokenSyntax": {
+    "kind": "oper_postfix"
+  },
+  "PoundSourceLocationTokenSyntax": {
+    "kind": "pound_sourceLocation",
+    "keyword": true
+  },
+  "FloatingLiteralTokenSyntax": {
+    "kind": "floating_literal"
+  },
+  "VarTokenSyntax": {
+    "kind": "kw_var",
+    "keyword": true
+  },
+  "AmpersandTokenSyntax": {
+    "kind": "amp_prefix"
+  },
+  "WildcardTokenSyntax": {
+    "kind": "kw__",
+    "keyword": true
+  },
+  "QuestionMarkPostfixTokenSyntax": {
+    "kind": "question_postfix"
+  },
+  "LeftBraceTokenSyntax": {
+    "kind": "l_brace"
+  },
+  "ExclamationMarkTokenSyntax": {
+    "kind": "exclaim_postfix"
+  },
+  "LetTokenSyntax": {
+    "kind": "kw_let",
+    "keyword": true
+  },
+  "DeferTokenSyntax": {
+    "kind": "kw_defer",
+    "keyword": true
+  },
+  "IsTokenSyntax": {
+    "kind": "kw_is",
+    "keyword": true
+  },
+  "ElseTokenSyntax": {
+    "kind": "kw_else",
+    "keyword": true
+  },
+  "DefaultTokenSyntax": {
+    "kind": "kw_default",
+    "keyword": true
+  },
+  "QuestionMarkInfixTokenSyntax": {
+    "kind": "question_infix"
+  },
+  "PeriodPrefixTokenSyntax": {
+    "kind": "period_prefix"
+  },
+  "AtSignTokenSyntax": {
+    "kind": "at_sign"
+  },
+  "CatchTokenSyntax": {
+    "kind": "kw_catch",
+    "keyword": true
+  },
+  "RightSquareTokenSyntax": {
+    "kind": "r_square"
+  },
+  "StringLiteralTokenSyntax": {
+    "kind": "string_literal"
+  },
+  "BreakTokenSyntax": {
+    "kind": "kw_break",
+    "keyword": true
+  },
+  "WhereTokenSyntax": {
+    "kind": "kw_where",
+    "keyword": true
+  },
+  "PoundAvailableTokenSyntax": {
+    "kind": "pound_available",
+    "keyword": true
+  },
+  "SemicolonTokenSyntax": {
+    "kind": "semi"
+  },
+  "ContinueTokenSyntax": {
+    "kind": "kw_continue",
+    "keyword": true
+  },
+  "PoundElseTokenSyntax": {
+    "kind": "pound_else",
+    "keyword": true
+  },
+  "ThrowsTokenSyntax": {
+    "kind": "kw_throws",
+    "keyword": true
+  },
+  "InoutTokenSyntax": {
+    "kind": "kw_inout",
+    "keyword": true
+  },
+  "TryTokenSyntax": {
+    "kind": "kw_try",
+    "keyword": true
+  },
+  "TypealiasTokenSyntax": {
+    "kind": "kw_typealias",
+    "keyword": true
+  },
+  "CaseTokenSyntax": {
+    "kind": "kw_case",
+    "keyword": true
+  },
+  "ArrowTokenSyntax": {
+    "kind": "arrow"
+  },
+  "DoTokenSyntax": {
+    "kind": "kw_do",
+    "keyword": true
+  },
+  "LeftAngleTokenSyntax": {
+    "kind": "l_angle"
+  },
+  "CommaTokenSyntax": {
+    "kind": "comma"
+  },
+  "IntegerLiteralTokenSyntax": {
+    "kind": "integer_literal"
+  },
+  "PoundIfTokenSyntax": {
+    "kind": "pound_if",
+    "keyword": true
+  },
+  "BinaryOperatorTokenSyntax": {
+    "kind": "oper_binary"
+  },
+  "WhileTokenSyntax": {
+    "kind": "kw_while",
+    "keyword": true
+  }
+}

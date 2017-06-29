@@ -1,0 +1,91 @@
+%# -*- mode: Swift -*-
+%# Ignore the following admonition; it applies to the resulting .swift file only
+//===--------- SyntaxNodes.swift - Syntax Node definitions -*- swift -*----===//
+//
+// This source file is part of the Swift.org open source project
+//
+// Copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
+// Licensed under Apache License v2.0 with Runtime Library Exception
+//
+// See https://swift.org/LICENSE.txt for license information
+// See https://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
+//
+//===----------------------------------------------------------------------===//
+%{
+    from gyb_syntax_support import *
+    nodes = load_all_syntax_nodes()
+    tokens = load_syntax_tokens()
+}%
+
+public protocol ExprSyntax: Syntax {}
+public protocol StmtSyntax: Syntax {}
+public protocol DeclSyntax: Syntax {}
+public protocol TypeSyntax: Syntax {}
+public protocol PatternSyntax: Syntax {}
+
+% for node in nodes:
+%   if node.is_syntax_collection():
+/// A homogenous collection of `${node.collection_element}`.
+public typealias ${node.name} = SyntaxCollection<${node.collection_element}>
+
+%   else:
+public struct ${node.name}: _SyntaxBase${", " + node.kind if node.kind != "Syntax" else ""} {
+  let root: SyntaxData
+  unowned let data: SyntaxData
+
+%     if node.has_children():
+  enum Cursor: Int {
+%       for child in node.children:
+    case ${child.name}
+%       end
+  }
+%     end
+
+  /// Ensures this node is structured with the correct children in the correct
+  /// positions.
+  override func validate() {
+    precondition(raw.layout.count == ${len(node.children)})
+%    for child in node.children:
+%     if child.token_choices:
+%       choices = ", ".join("." + tokens[choice].kind for choice in child.token_choices)
+    guard case .token(let kind, _, _, _) = raw[Cursor.${child.name}],  [${choices}].contains(kind)) else {
+      fatalError("invalid token specified for ${child.name} (expected one of [${choices}], got \(kind)")
+    }
+%     elif child.token_kind and child.token_kind != "TokenSyntax":
+%       token_kind = tokens[child.token_kind].kind
+    guard case .token(.${token_kind}, _, _, _) = raw[Cursor.${child.name}] else {
+      fatalError("invalid token specified for ${child.name} (expected .${token_kind}, got \(kind)")
+    }
+%     end
+%    end
+  }
+
+%     for child in node.children:
+  /// The `${child.capital_name}` of this node.
+  public var ${child.name}: ${child.type_name}${"?" if child.is_optional else ""} {
+%       if child.is_optional:
+    guard raw[Cursor.${child.name}].isPresent else { return nil }
+%       end
+    return ${child.type_name}(root: root, data: data.cachedChild(at: Cursor.${child.name}))
+  }
+
+  /// Creates a new version of this node with its `${child.capital_name}`
+  /// replaced with the passed-in value.
+  /// - parameter syntax: The `${child.capital_name}` being replaced.
+  /// - returns: A copy of this node with that child replaced, in a new syntax
+  ///            tree.
+  public func with${child.capital_name}(_ syntax: ${child.type_name}) -> ${node.name} {
+%      token_kinds = ["." + tokens[choice].kind for choice in child.token_choices]
+%      if token_kinds:
+    guard [${", ".join(token_kinds)}].contains(syntax.tokenKind) else {
+      fatalError("invalid token for ${child.name}: expected ")
+    }
+%      end
+    return data.replacingChild(syntax.raw, at: Cursor.${child.name})
+  }
+
+%     end
+}
+
+%   end
+% end

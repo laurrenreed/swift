@@ -30,6 +30,7 @@
 #define SWIFT_SYNTAX_RAWSYNTAX_H
 
 #include "swift/Syntax/References.h"
+#include "swift/Syntax/SyntaxKind.h"
 #include "swift/Syntax/Trivia.h"
 #include "llvm/ADT/IntrusiveRefCntPtr.h"
 #include "llvm/ADT/PointerUnion.h"
@@ -45,15 +46,25 @@ using llvm::StringRef;
 #define syntax_assert_child_kind(Raw, Cursor, ExpectedKind)                    \
   (assert(Raw->getChild(Cursor)->Kind == ExpectedKind));
 #else
-#define syntax_assert_child_kind(Raw, Cursor, Kind) ((void)0);
+#define syntax_assert_child_kind(Raw, Cursor, Kind) ({});
 #endif
 
 #ifndef NDEBUG
-#define syntax_assert_child_token(Raw, Cursor, TokenKind)                      \
-  (assert(cast<RawTokenSyntax>(Raw->getChild(Cursor))->getTokenKind() ==       \
-          TokenKind));
+#define syntax_assert_child_token(Raw, CursorName, __VA_ARGS__)               \
+  ({                                                                          \
+    bool __Found = false;                                                     \
+    auto __Token = cast<RawTokenSyntax>(Raw->at(Cursor::CursorName));         \
+    for (auto Token : {__VA_ARGS__}) {                                        \
+      if (__Token->getKind() == Token) {                                      \
+        __Found = true;                                                       \
+        break;                                                                \
+      }                                                                       \
+    }                                                                         \
+    assert(__Found && "invalid token supplied for "                           \
+           #CursorName ", expected one of {" #__VA_ARGS "}");                 \
+  })
 #else
-#define syntax_assert_child_token(Raw, Cursor, TokenKind) ((void)0);
+#define syntax_assert_child_token(Raw, Cursor, __VA_ARGS__) ({});
 #endif
 
 #ifndef NDEBUG
@@ -64,7 +75,7 @@ using llvm::StringRef;
     assert(__Child->getText() == Text);                                        \
   })
 #else
-#define syntax_assert_child_token_text(Raw, Cursor, TokenKind, Text) ((void)0);
+#define syntax_assert_child_token_text(Raw, Cursor, TokenKind, Text) ({});
 #endif
 
 #ifndef NDEBUG
@@ -74,7 +85,7 @@ using llvm::StringRef;
     assert(Tok.getText() == Text);                                             \
   })
 #else
-#define syntax_assert_token_is(Tok, Kind, Text) ((void)0);
+#define syntax_assert_token_is(Tok, Kind, Text) ({});
 #endif
 
 namespace swift {
@@ -148,15 +159,6 @@ public:
   /// Dump a description of this position to the given output stream
   /// for debugging.
   void dump(llvm::raw_ostream &OS = llvm::errs()) const;
-};
-
-enum class SyntaxKind {
-  Token,
-#define SYNTAX(Id, Parent) Id,
-#define SYNTAX_COLLECTION(Id, Element) Id,
-#define MISSING_SYNTAX(Id, Parent) Id,
-#define SYNTAX_RANGE(Id, First, Last) First_##Id = First, Last_##Id = Last,
-#include "swift/Syntax/SyntaxKinds.def"
 };
 
 /// An indicator of whether a Syntax node was found or written in the source.

@@ -1,0 +1,72 @@
+%# -*- mode: C++ -*-
+%# Ignore the following admonition; it applies to the resulting .h file only
+//// Automatically Generated From SyntaxKinds.h.gyb.
+//// Do Not Edit Directly!
+//===-------------- SyntaxKinds.h - Syntax Kind definitions ---------------===//
+//
+// This source file is part of the Swift.org open source project
+//
+// Copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
+// Licensed under Apache License v2.0 with Runtime Library Exception
+//
+// See https://swift.org/LICENSE.txt for license information
+// See https://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
+//
+//===----------------------------------------------------------------------===//
+%{
+    from gyb_syntax_support import *
+    nodes = load_all_syntax_nodes()
+    grouped_nodes = { kind: [] for kind in SYNTAX_BASE_KINDS }
+    for node in nodes:
+        grouped_nodes[node.kind].append(node)
+}%
+#include "swift/Basic/JSONSerialization.h"
+
+namespace swift {
+namespace syntax {
+
+enum class SyntaxKind {
+  Token,
+% for name, nodes in grouped_nodes.items():
+%   for node in nodes:
+  ${node.capital_syntax_kind},
+%   end
+%   if name not in ["Syntax", "SyntaxCollection"]:
+%     kind = strip_syntax_suffix(name)
+%     first_kind = nodes[0].capital_syntax_kind
+%     last_kind = nodes[-1].capital_syntax_kind
+  First_${kind} = ${first_kind},
+  Last_${kind} = ${last_kind},
+%   end
+% end
+}
+
+void dumpSyntaxKind(llvm::raw_ostream &os, const SyntaxKind kind) {
+  switch (kind) {
+% for name, nodes in grouped_nodes.items():
+%   for node in nodes:
+  case SyntaxKind::${node.capital_syntax_kind}:
+    os << "${node.capital_syntax_kind}";
+%   end
+% end
+  }
+}
+
+} // end namespace syntax
+
+namespace json {
+
+/// Serialization traits for SyntaxKind.
+template <>
+struct ScalarEnumerationTraits<syntax::SyntaxKind> {
+  static void enumeration(Output &out, syntax::SyntaxKind &value) {
+% for name, nodes in grouped_nodes.items():
+%   for node in nodes:
+    out.enumCase(value, "${node.capital_syntax_kind}", syntax::SyntaxKind::${node.capital_syntax_kind});
+%   end
+% end
+  }
+};
+
+} // end namespace json
+} // end namespace swift

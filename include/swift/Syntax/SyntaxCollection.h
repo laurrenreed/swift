@@ -191,12 +191,6 @@ public:
   }
 };
 
-#define SYNTAX(Id, Super)
-#define SYNTAX_COLLECTION(Id, Element) \
-class Element;                         \
-using Id##Syntax = SyntaxCollection<SyntaxKind::Id, Element>;
-#include "swift/Syntax/SyntaxKinds.def"
-
 } // end namespace syntax
 } // end namespace swift
 

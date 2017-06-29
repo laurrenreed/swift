@@ -1,0 +1,741 @@
+{
+  "ContinueStmtSyntax": {
+    "comment": [
+      "A continue statement.",
+      "continue",
+      "continue label"
+    ],
+    "kind": "StmtSyntax",
+    "children": [
+      {
+        "Continue": {
+          "kind": "ContinueTokenSyntax"
+        }
+      },
+      {
+        "Label": {
+          "kind": "IdentifierTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "Semicolon": {
+          "kind": "SemicolonTokenSyntax",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "WhileStmtSyntax": {
+    "comment": [
+      "A while loop statement.",
+      "while true, true, true { }"
+    ],
+    "kind": "StmtSyntax",
+    "children": [
+      {
+        "LabelName": {
+          "kind": "IdentifierTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "LabelColon": {
+          "kind": "ColonTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "While": {
+          "kind": "WhileTokenSyntax"
+        }
+      },
+      {
+        "Conditions": {
+          "kind": "ConditionListSyntax"
+        }
+      },
+      {
+        "Body": {
+          "kind": "CodeBlockSyntax"
+        }
+      },
+      {
+        "Semicolon": {
+          "kind": "SemicolonTokenSyntax",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "DeferStmtSyntax": {
+    "comment": [
+      "A defer statement.",
+      "defer { }"
+    ],
+    "kind": "StmtSyntax",
+    "children": [
+      {
+        "Defer": {
+          "kind": "DeferTokenSyntax"
+        }
+      },
+      {
+        "Body": {
+          "kind": "CodeBlockSyntax"
+        }
+      },
+      {
+        "Semicolon": {
+          "kind": "SemicolonTokenSyntax",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "ExpressionStmtSyntax": {
+    "comment": [
+      "An expression in statement position.",
+      "foo();"
+    ],
+    "kind": "StmtSyntax",
+    "children": [
+      {
+        "Expression": {
+          "kind": "ExprSyntax"
+        }
+      },
+      {
+        "Semicolon": {
+          "kind": "SemicolonTokenSyntax",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "ElseIfContinuationSyntax": {
+    "comment": [
+      "An else-if clause with another condition.",
+      " else if foo() { ... }"
+    ],
+    "kind": "Syntax",
+    "children": [
+      {
+        "IfStmt": {
+          "kind": "IfStmtSyntax"
+        }
+      }
+    ]
+  },
+  "ElseBlockSyntax": {
+    "comment": [
+      "An else clause with no other condition.",
+      " else { ... }"
+    ],
+    "kind": "Syntax",
+    "children": [
+      {
+        "Body": {
+          "kind": "CodeBlockSyntax"
+        }
+      }
+    ]
+  },
+  "SwitchCaseListSyntax": {
+    "comment": [
+      "A list of cases in a switch statement."
+    ],
+    "kind": "SyntaxCollection",
+    "element": "SwitchCaseSyntax"
+  },
+  "RepeatWhileStmtSyntax": {
+    "comment": [
+      "A repeat-while loop statement.",
+      "repeat { } while true;"
+    ],
+    "kind": "StmtSyntax",
+    "children": [
+      {
+        "LabelName": {
+          "kind": "IdentifierTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "LabelColon": {
+          "kind": "ColonTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "Repeat": {
+          "kind": "RepeatTokenSyntax"
+        }
+      },
+      {
+        "Body": {
+          "kind": "CodeBlockSyntax"
+        }
+      },
+      {
+        "While": {
+          "kind": "WhileTokenSyntax"
+        }
+      },
+      {
+        "Condition": {
+          "kind": "ExprSyntax"
+        }
+      },
+      {
+        "Semicolon": {
+          "kind": "SemicolonTokenSyntax",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "GuardStmtSyntax": {
+    "comment": [
+      "A guard statment.",
+      "guard foo() else { return }"
+    ],
+    "kind": "StmtSyntax",
+    "children": [
+      {
+        "Guard": {
+          "kind": "GuardTokenSyntax"
+        }
+      },
+      {
+        "Conditions": {
+          "kind": "ConditionListSyntax"
+        }
+      },
+      {
+        "Else": {
+          "kind": "ElseTokenSyntax"
+        }
+      },
+      {
+        "Body": {
+          "kind": "CodeBlockSyntax"
+        }
+      },
+      {
+        "Semicolon": {
+          "kind": "SemicolonTokenSyntax",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "ForInStmtSyntax": {
+    "comment": [
+      "A for-in statement.",
+      "for i in 0..<10 { print(i) }"
+    ],
+    "kind": "StmtSyntax",
+    "children": [
+      {
+        "LabelName": {
+          "kind": "IdentifierTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "LabelColon": {
+          "kind": "ColonTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "For": {
+          "kind": "ForTokenSyntax"
+        }
+      },
+      {
+        "Case": {
+          "kind": "CaseTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "ItemPattern": {
+          "kind": "PatternSyntax"
+        }
+      },
+      {
+        "In": {
+          "kind": "InTokenSyntax"
+        }
+      },
+      {
+        "CollectionExpr": {
+          "kind": "ExprSyntax"
+        }
+      },
+      {
+        "WhereClause": {
+          "kind": "GenericWhereClauseSyntax",
+          "optional": true
+        }
+      },
+      {
+        "Body": {
+          "kind": "CodeBlockSyntax"
+        }
+      },
+      {
+        "Semicolon": {
+          "kind": "SemicolonTokenSyntax",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "SwitchStmtSyntax": {
+    "comment": [
+      "A full switch statement.",
+      "switch expr {",
+      "case 4: print(\"Hello\")",
+      "default: break",
+      "}"
+    ],
+    "kind": "StmtSyntax",
+    "children": [
+      {
+        "LabelName": {
+          "kind": "IdentifierTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "LabelColon": {
+          "kind": "ColonTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "Switch": {
+          "kind": "SwitchTokenSyntax"
+        }
+      },
+      {
+        "Expression": {
+          "kind": "ExprSyntax"
+        }
+      },
+      {
+        "OpenBrace": {
+          "kind": "LeftBraceTokenSyntax"
+        }
+      },
+      {
+        "Cases": {
+          "kind": "SwitchCaseListSyntax"
+        }
+      },
+      {
+        "CloseBrace": {
+          "kind": "RightBraceTokenSyntax"
+        }
+      },
+      {
+        "Semicolon": {
+          "kind": "SemicolonTokenSyntax",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "CatchClauseListSyntax": {
+    "comment": [
+      "A list of possible clauses of a do-catch statement."
+    ],
+    "kind": "SyntaxCollection",
+    "element": "CatchClauseSyntax"
+  },
+  "DoStmtSyntax": {
+    "comment": [
+      "A do statement which opens an explicit scope.",
+      "do { let x = 4; print(x) }"
+    ],
+    "kind": "StmtSyntax",
+    "children": [
+      {
+        "LabelName": {
+          "kind": "IdentifierTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "LabelColon": {
+          "kind": "ColonTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "Do": {
+          "kind": "DoTokenSyntax"
+        }
+      },
+      {
+        "Body": {
+          "kind": "CodeBlockSyntax"
+        }
+      },
+      {
+        "CatchClauses": {
+          "kind": "CatchClauseListSyntax"
+        }
+      },
+      {
+        "Semicolon": {
+          "kind": "SemicolonTokenSyntax",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "ReturnStmtSyntax": {
+    "comment": [
+      "A return statement.",
+      "return foo"
+    ],
+    "kind": "StmtSyntax",
+    "children": [
+      {
+        "Return": {
+          "kind": "ReturnTokenSyntax"
+        }
+      },
+      {
+        "Expression": {
+          "kind": "ExprSyntax",
+          "optional": true
+        }
+      },
+      {
+        "Semicolon": {
+          "kind": "SemicolonTokenSyntax",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "FallthroughStmtSyntax": {
+    "comment": [
+      "A fallthrough statement.",
+      "fallthrough"
+    ],
+    "kind": "StmtSyntax",
+    "children": [
+      {
+        "Fallthrough": {
+          "kind": "FallthroughTokenSyntax"
+        }
+      },
+      {
+        "Semicolon": {
+          "kind": "SemicolonTokenSyntax",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "BreakStmtSyntax": {
+    "comment": [
+      "A break statement.",
+      "break",
+      "break label"
+    ],
+    "kind": "StmtSyntax",
+    "children": [
+      {
+        "Break": {
+          "kind": "BreakTokenSyntax"
+        }
+      },
+      {
+        "Label": {
+          "kind": "IdentifierTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "Semicolon": {
+          "kind": "SemicolonTokenSyntax",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "CodeBlockSyntax": {
+    "comment": [
+      "A code block with a list of statements surrounded in braces.",
+      "let x: () -> Void = { foo() }",
+      "                    ^~~~~~~~~"
+    ],
+    "kind": "Syntax",
+    "children": [
+      {
+        "OpenBrace": {
+          "kind": "LeftBraceTokenSyntax"
+        }
+      },
+      {
+        "Statments": {
+          "kind": "StatementListSyntax"
+        }
+      },
+      {
+        "CloseBrace": {
+          "kind": "RightBraceTokenSyntax"
+        }
+      }
+    ]
+  },
+  "CaseItemListSyntax": {
+    "comment": [
+      "A list of items of a case statement.",
+      "case 1, 3, 5:",
+      "     ^~~~~~~"
+    ],
+    "kind": "SyntaxCollection",
+    "element": "CaseItemSyntax"
+  },
+  "ConditionListSyntax": {
+    "comment": [
+      "condition-list -> condition",
+      "                | condition ','? condition-list",
+      "condition -> expression",
+      "           | availability-condition",
+      "           | case-condition",
+      "           | optional-binding-condition"
+    ],
+    "kind": "SyntaxCollection",
+    "element": "Syntax"
+  },
+  "DeclarationStmtSyntax": {
+    "comment": [
+      "A declaration in statement position.",
+      "struct Foo {};"
+    ],
+    "kind": "StmtSyntax",
+    "children": [
+      {
+        "Declaration": {
+          "kind": "DeclSyntax"
+        }
+      },
+      {
+        "Semicolon": {
+          "kind": "SemicolonTokenSyntax",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "ThrowStmtSyntax": {
+    "comment": [
+      "A throw statement.",
+      "throw MyError.error"
+    ],
+    "kind": "StmtSyntax",
+    "children": [
+      {
+        "Throw": {
+          "kind": "ThrowTokenSyntax"
+        }
+      },
+      {
+        "Expression": {
+          "kind": "ExprSyntax"
+        }
+      },
+      {
+        "Semicolon": {
+          "kind": "SemicolonTokenSyntax",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "IfStmtSyntax": {
+    "comment": [
+      "An if statement.",
+      "if foo(), true { } else { }"
+    ],
+    "kind": "StmtSyntax",
+    "children": [
+      {
+        "LabelName": {
+          "kind": "IdentifierTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "LabelColon": {
+          "kind": "ColonTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "If": {
+          "kind": "IfTokenSyntax"
+        }
+      },
+      {
+        "Conditions": {
+          "kind": "ConditionListSyntax"
+        }
+      },
+      {
+        "Body": {
+          "kind": "CodeBlockSyntax"
+        }
+      },
+      {
+        "ElseClause": {
+          "kind": "Syntax",
+          "optional": true
+        }
+      },
+      {
+        "Semicolon": {
+          "kind": "SemicolonTokenSyntax",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "CaseItemSyntax": {
+    "comment": [
+      "An item of a switch case.",
+      "case foo where bar(baz):",
+      "     ^~~~~~~~~~~~~~~~~~"
+    ],
+    "kind": "Syntax",
+    "children": [
+      {
+        "Pattern": {
+          "kind": "PatternSyntax"
+        }
+      },
+      {
+        "WhereClause": {
+          "kind": "GenericWhereClauseSyntax",
+          "optional": true
+        }
+      },
+      {
+        "Comma": {
+          "kind": "CommaTokenSyntax",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "SwitchCaseSyntax": {
+    "comment": [
+      "A case of a switch statement, including the list of statements.",
+      "case 3: print(\"Hello\")"
+    ],
+    "kind": "Syntax",
+    "children": [
+      {
+        "Label": {
+          "kind": "Syntax"
+        }
+      },
+      {
+        "Body": {
+          "kind": "StatementListSyntax"
+        }
+      }
+    ]
+  },
+  "SwitchDefaultLabelSyntax": {
+    "comment": [
+      "A default label of a switch statement.",
+      "default:"
+    ],
+    "kind": "Syntax",
+    "children": [
+      {
+        "Default": {
+          "kind": "DefaultTokenSyntax"
+        }
+      },
+      {
+        "Colon": {
+          "kind": "ColonTokenSyntax"
+        }
+      }
+    ]
+  },
+  "StatementListSyntax": {
+    "comment": [
+      "A list of statements."
+    ],
+    "kind": "SyntaxCollection",
+    "element": "StmtSyntax"
+  },
+  "SwitchCaseLabelSyntax": {
+    "comment": [
+      "A switch case label.",
+      "case true:"
+    ],
+    "kind": "Syntax",
+    "children": [
+      {
+        "Case": {
+          "kind": "CaseTokenSyntax"
+        }
+      },
+      {
+        "CaseItems": {
+          "kind": "CaseItemListSyntax"
+        }
+      },
+      {
+        "Colon": {
+          "kind": "ColonTokenSyntax"
+        }
+      }
+    ]
+  },
+  "CatchClauseSyntax": {
+    "comment": [
+      "A binding clause of a catch statement.",
+      "do { } catch { }",
+      "       ^~~~~~~~~"
+    ],
+    "kind": "Syntax",
+    "children": [
+      {
+        "Catch": {
+          "kind": "CatchTokenSyntax"
+        }
+      },
+      {
+        "Pattern": {
+          "kind": "PatternSyntax",
+          "optional": true
+        }
+      },
+      {
+        "WhereClause": {
+          "kind": "GenericWhereClauseSyntax",
+          "optional": true
+        }
+      },
+      {
+        "Body": {
+          "kind": "CodeBlockSyntax"
+        }
+      }
+    ]
+  }
+}

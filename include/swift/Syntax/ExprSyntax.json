@@ -1,0 +1,243 @@
+{
+  "InOutExprSyntax": {
+    "comment": [
+      "An inout expression.",
+      "&x"
+    ],
+    "kind": "ExprSyntax",
+    "children": [
+      {
+        "Ampersand": {
+          "kind": "AmpersandTokenSyntax"
+        }
+      },
+      {
+        "Identifier": {
+          "kind": "IdentifierTokenSyntax"
+        }
+      }
+    ]
+  },
+  "PoundColumnExprSyntax": {
+    "comment": [
+      "A #column expression."
+    ],
+    "kind": "ExprSyntax",
+    "children": [
+      {
+        "PoundColumn": {
+          "kind": "PoundColumnTokenSyntax"
+        }
+      }
+    ]
+  },
+  "FunctionCallArgumentListSyntax": {
+    "kind": "SyntaxCollection",
+    "element": "FunctionCallArgumentSyntax"
+  },
+  "TryOperatorSyntax": {
+    "comment": [
+      "The try operator.",
+      "try foo()",
+      "try? foo()",
+      "try! foo()"
+    ],
+    "kind": "Syntax",
+    "children": [
+      {
+        "Try": {
+          "kind": "TryTokenSyntax"
+        }
+      },
+      {
+        "QuestionOrExclamationMark": {
+          "kind": "TokenSyntax",
+          "optional": true,
+          "choices": [
+            "QuestionMarkPostfixTokenSyntax",
+            "ExclamationMarkTokenSyntax"
+          ]
+        }
+      }
+    ]
+  },
+  "PoundLineExprSyntax": {
+    "comment": [
+      "A #line expression."
+    ],
+    "kind": "ExprSyntax",
+    "children": [
+      {
+        "PoundLine": {
+          "kind": "PoundLineTokenSyntax"
+        }
+      }
+    ]
+  },
+  "PoundFileExprSyntax": {
+    "comment": [
+      "A #file expression."
+    ],
+    "kind": "ExprSyntax",
+    "children": [
+      {
+        "PoundFile": {
+          "kind": "PoundFileTokenSyntax"
+        }
+      }
+    ]
+  },
+  "PoundFunctionExprSyntax": {
+    "comment": [
+      "A #function expression."
+    ],
+    "kind": "ExprSyntax",
+    "children": [
+      {
+        "PoundFunction": {
+          "kind": "PoundFunctionTokenSyntax"
+        }
+      }
+    ]
+  },
+  "SymbolicReferenceExprSyntax": {
+    "comment": [
+      "symbolic-reference-expression -> identifier generic-argument-clause?"
+    ],
+    "kind": "ExprSyntax",
+    "children": [
+      {
+        "Identifier": {
+          "kind": "IdentifierTokenSyntax"
+        }
+      },
+      {
+        "GenericArgumentClause": {
+          "kind": "GenericArgumentClauseSyntax",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "PrefixOperatorExprSyntax": {
+    "comment": [
+      "A prefix operator expression.",
+      "-x",
+      "!true"
+    ],
+    "kind": "ExprSyntax",
+    "children": [
+      {
+        "Operator": {
+          "kind": "PrefixOperatorTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "PostfixExpression": {
+          "kind": "PostfixExprSyntax"
+        }
+      }
+    ]
+  },
+  "FloatLiteralExprSyntax": {
+    "comment": [
+      "A floating-point literal",
+      "4.0",
+      "-3.9",
+      "+4e20"
+    ],
+    "kind": "ExprSyntax",
+    "children": [
+      {
+        "Sign": {
+          "kind": "PrefixOperatorTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "FloatingDigits": {
+          "kind": "FloatingLiteralTokenSyntax"
+        }
+      }
+    ]
+  },
+  "FunctionCallExprSyntax": {
+    "kind": "ExprSyntax",
+    "children": [
+      {
+        "CalledExpression": {
+          "kind": "ExprSyntax"
+        }
+      },
+      {
+        "LeftParen": {
+          "kind": "LeftParenTokenSyntax"
+        }
+      },
+      {
+        "ArgumentList": {
+          "kind": "FunctionCallArgumentListSyntax"
+        }
+      },
+      {
+        "RightParen": {
+          "kind": "RightParenTokenSyntax"
+        }
+      }
+    ]
+  },
+  "FunctionCallArgumentSyntax": {
+    "comment": [
+      "function-call-argument -> label? ':'? expression ','?"
+    ],
+    "kind": "Syntax",
+    "children": [
+      {
+        "Label": {
+          "kind": "IdentifierTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "Colon": {
+          "kind": "ColonTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "Expression": {
+          "kind": "ExprSyntax"
+        }
+      },
+      {
+        "TrailingComma": {
+          "kind": "CommaTokenSyntax",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "IntegerLiteralExprSyntax": {
+    "comment": [
+      "An integer literal.",
+      "3",
+      "+3_400",
+      "+0x4f"
+    ],
+    "kind": "ExprSyntax",
+    "children": [
+      {
+        "Sign": {
+          "kind": "PrefixOperatorTokenSyntax",
+          "optional": true
+        }
+      },
+      {
+        "Digits": {
+          "kind": "IntegerLiteralTokenSyntax"
+        }
+      }
+    ]
+  }
+}
