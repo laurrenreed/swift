@@ -846,6 +846,9 @@ if(NOT DEFINED SWIFT_API_NOTES_INPUTS)
   message(FATAL_ERROR "API notes are not available in ${SWIFT_API_NOTES_PATH}")
 endif()
 
+add_custom_target(swift-syntax-all-generated-source)
+include(AddSwiftSyntaxTableGen)
+
 # Add all of the subdirectories, where we actually do work.
 if(SWIFT_INCLUDE_TOOLS)
   add_subdirectory(include)

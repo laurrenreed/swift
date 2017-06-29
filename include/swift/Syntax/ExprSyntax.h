@@ -129,7 +129,6 @@ public:
   SymbolicReferenceExprSyntax(const RC<SyntaxData> Root, const SyntaxData *Data)
     : ExprSyntax(Root, Data) {}
 
-
   /// Get the identifier for the symbol to which this expression refers.
   TokenSyntax getIdentifier() const;
 
