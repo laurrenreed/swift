@@ -1,0 +1,321 @@
+{
+  "As": {
+    "text": "as",
+    "kind": "kw_as",
+    "is_keyword": true
+  },
+  "Break": {
+    "text": "break",
+    "kind": "kw_break",
+    "is_keyword": true
+  },
+  "Case": {
+    "text": "case",
+    "kind": "kw_case",
+    "is_keyword": true
+  },
+  "Catch": {
+    "text": "catch",
+    "kind": "kw_catch",
+    "is_keyword": true
+  },
+  "Continue": {
+    "text": "continue",
+    "kind": "kw_continue",
+    "is_keyword": true
+  },
+  "Default": {
+    "text": "default",
+    "kind": "kw_default",
+    "is_keyword": true
+  },
+  "Defer": {
+    "text": "defer",
+    "kind": "kw_defer",
+    "is_keyword": true
+  },
+  "Do": {
+    "text": "do",
+    "kind": "kw_do",
+    "is_keyword": true
+  },
+  "Else": {
+    "text": "else",
+    "kind": "kw_else",
+    "is_keyword": true
+  },
+  "Fallthrough": {
+    "text": "fallthrough",
+    "kind": "kw_fallthrough",
+    "is_keyword": true
+  },
+  "For": {
+    "text": "for",
+    "kind": "kw_for",
+    "is_keyword": true
+  },
+  "Func": {
+    "text": "func",
+    "kind": "kw_func",
+    "is_keyword": true
+  },
+  "Guard": {
+    "text": "guard",
+    "kind": "kw_guard",
+    "is_keyword": true
+  },
+  "If": {
+    "text": "if",
+    "kind": "kw_if",
+    "is_keyword": true
+  },
+  "In": {
+    "text": "in",
+    "kind": "kw_in",
+    "is_keyword": true
+  },
+  "Inout": {
+    "text": "inout",
+    "kind": "kw_inout",
+    "is_keyword": true
+  },
+  "Is": {
+    "text": "is",
+    "kind": "kw_is",
+    "is_keyword": true
+  },
+  "Let": {
+    "text": "let",
+    "kind": "kw_let",
+    "is_keyword": true
+  },
+  "Public": {
+    "text": "public",
+    "kind": "kw_public",
+    "is_keyword": true
+  },
+  "Repeat": {
+    "text": "repeat",
+    "kind": "kw_repeat",
+    "is_keyword": true
+  },
+  "Rethrows": {
+    "text": "rethrows",
+    "kind": "kw_rethrows",
+    "is_keyword": true
+  },
+  "Return": {
+    "text": "return",
+    "kind": "kw_return",
+    "is_keyword": true
+  },
+  "Static": {
+    "text": "static",
+    "kind": "kw_static",
+    "is_keyword": true
+  },
+  "Struct": {
+    "text": "struct",
+    "kind": "kw_struct",
+    "is_keyword": true
+  },
+  "Switch": {
+    "text": "switch",
+    "kind": "kw_switch",
+    "is_keyword": true
+  },
+  "Throw": {
+    "text": "throw",
+    "kind": "kw_throw",
+    "is_keyword": true
+  },
+  "Throws": {
+    "text": "throws",
+    "kind": "kw_throws",
+    "is_keyword": true
+  },
+  "Try": {
+    "text": "try",
+    "kind": "kw_try",
+    "is_keyword": true
+  },
+  "Typealias": {
+    "text": "typealias",
+    "kind": "kw_typealias",
+    "is_keyword": true
+  },
+  "Var": {
+    "text": "var",
+    "kind": "kw_var",
+    "is_keyword": true
+  },
+  "Where": {
+    "text": "where",
+    "kind": "kw_where",
+    "is_keyword": true
+  },
+  "While": {
+    "text": "while",
+    "kind": "kw_while",
+    "is_keyword": true
+  },
+  "Wildcard": {
+    "text": "_",
+    "kind": "kw__",
+    "is_keyword": true
+  },
+  "PoundAvailable": {
+    "text": "#available",
+    "kind": "pound_available",
+    "is_keyword": true
+  },
+  "PoundEndif": {
+    "text": "#endif",
+    "kind": "pound_endif",
+    "is_keyword": true
+  },
+  "PoundElse": {
+    "text": "#else",
+    "kind": "pound_else",
+    "is_keyword": true
+  },
+  "PoundElseif": {
+    "text": "#elseif",
+    "kind": "pound_elseif",
+    "is_keyword": true
+  },
+  "PoundIf": {
+    "text": "#if",
+    "kind": "pound_if",
+    "is_keyword": true
+  },
+  "PoundSourceLocation": {
+    "text": "#sourceLocation",
+    "kind": "pound_sourceLocation",
+    "is_keyword": true
+  },
+  "PoundFile": {
+    "text": "#file",
+    "kind": "pound_file",
+    "is_keyword": true
+  },
+  "PoundLine": {
+    "text": "#line",
+    "kind": "pound_line",
+    "is_keyword": true
+  },
+  "PoundColumn": {
+    "text": "#column",
+    "kind": "pound_column",
+    "is_keyword": true
+  },
+  "PoundFunction": {
+    "text": "#function",
+    "kind": "pound_function",
+    "is_keyword": true
+  },
+  "Arrow": {
+    "text": "->",
+    "kind": "arrow"
+  },
+  "AtSign": {
+    "text": "@",
+    "kind": "at_sign"
+  },
+  "Colon": {
+    "text": ":",
+    "kind": "colon"
+  },
+  "Semicolon": {
+    "text": ";",
+    "kind": "semi"
+  },
+  "Comma": {
+    "text": ",",
+    "kind": "comma"
+  },
+  "Period": {
+    "text": ".",
+    "kind": "period"
+  },
+  "Equal": {
+    "text": "=",
+    "kind": "equal"
+  },
+  "PrefixPeriod": {
+    "text": ".",
+    "kind": "period_prefix"
+  },
+  "LeftParen": {
+    "text": "(",
+    "kind": "l_paren"
+  },
+  "RightParen": {
+    "text": ")",
+    "kind": "r_paren"
+  },
+  "LeftBrace": {
+    "text": "{",
+    "kind": "l_brace"
+  },
+  "RightBrace": {
+    "text": "}",
+    "kind": "r_brace"
+  },
+  "LeftSquareBracket": {
+    "text": "[",
+    "kind": "l_square"
+  },
+  "RightSquareBracket": {
+    "text": "]",
+    "kind": "r_square"
+  },
+  "LeftAngle": {
+    "text": "<",
+    "kind": "l_angle"
+  },
+  "RightAngle": {
+    "text": ">",
+    "kind": "r_angle"
+  },
+  "Ampersand": {
+    "text": "&",
+    "kind": "amp_prefix"
+  },
+  "PostfixQuestionMark": {
+    "text": "?",
+    "kind": "question_postfix"
+  },
+  "InfixQuestionMark": {
+    "text": "?",
+    "kind": "question_infix"
+  },
+  "ExclamationMark": {
+    "text": "!",
+    "kind": "exclaim_postfix"
+  },
+  "Identifier": {
+    "kind": "identifier"
+  },
+  "UnspacedBinaryOperator": {
+    "kind": "oper_binary_unspaced"
+  },
+  "SpacedBinaryOperator": {
+    "kind": "oper_binary_spaced"
+  },
+  "PrefixOperator": {
+    "kind": "oper_prefix"
+  },
+  "PostfixOperator": {
+    "kind": "oper_postfix"
+  },
+  "IntegerLiteral": {
+    "kind": "integer_literal"
+  },
+  "FloatingLiteral": {
+    "kind": "floating_literal"
+  },
+  "StringLiteral": {
+    "kind": "string_literal"
+  }
+}

@@ -1,0 +1,232 @@
+{
+  "EnumCasePattern": {
+    "comment": [
+      "enum-case-pattern -> type-identifier? '.' identifier tuple-pattern?"
+    ],
+    "kind": "Pattern",
+    "children": [
+      {
+        "TypeIdentifier": {
+          "kind": "TypeIdentifier",
+          "optional": true
+        }
+      },
+      {
+        "Period": {
+          "kind": "PeriodToken"
+        }
+      },
+      {
+        "CaseName": {
+          "kind": "IdentifierToken"
+        }
+      },
+      {
+        "AssociatedTuple": {
+          "kind": "TuplePattern",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "IsTypePattern": {
+    "comment": [
+      "is-type-pattern -> 'is' type"
+    ],
+    "kind": "Pattern",
+    "children": [
+      {
+        "IsKeyword": {
+          "kind": "IsToken"
+        }
+      },
+      {
+        "Type": {
+          "kind": "Type"
+        }
+      }
+    ]
+  },
+  "OptionalPattern": {
+    "comment": [
+      "optional-pattern -> identifier '?'"
+    ],
+    "kind": "Pattern",
+    "children": [
+      {
+        "Identifier": {
+          "kind": "IdentifierToken"
+        }
+      },
+      {
+        "QuestionMark": {
+          "kind": "PostfixQuestionMarkToken"
+        }
+      }
+    ]
+  },
+  "IdentifierPattern": {
+    "comment": [
+      "identifier-pattern -> identifier type-annotation?"
+    ],
+    "kind": "Pattern",
+    "children": [
+      {
+        "Identifier": {
+          "kind": "IdentifierToken"
+        }
+      },
+      {
+        "TypeAnnotation": {
+          "kind": "TypeAnnotation",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "AsTypePattern": {
+    "comment": [
+      "as-pattern -> pattern 'as' type"
+    ],
+    "kind": "Pattern",
+    "children": [
+      {
+        "Pattern": {
+          "kind": "Pattern"
+        }
+      },
+      {
+        "AsKeyword": {
+          "kind": "AsToken"
+        }
+      },
+      {
+        "Type": {
+          "kind": "Type"
+        }
+      }
+    ]
+  },
+  "TuplePattern": {
+    "comment": [
+      "tuple-pattern -> '(' tuple-pattern-element-list ')' type-annotation? "
+    ],
+    "kind": "Pattern",
+    "children": [
+      {
+        "OpenParen": {
+          "kind": "LeftParenToken"
+        }
+      },
+      {
+        "Elements": {
+          "kind": "TuplePatternElementList"
+        }
+      },
+      {
+        "CloseParen": {
+          "kind": "RightParenToken"
+        }
+      },
+      {
+        "TypeAnnotation": {
+          "kind": "TypeAnnotation",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "WildcardPattern": {
+    "comment": [
+      "wildcard-pattern -> '_' type-annotation?"
+    ],
+    "kind": "Pattern",
+    "children": [
+      {
+        "Wildcard": {
+          "kind": "WildcardToken"
+        }
+      },
+      {
+        "TypeAnnotation": {
+          "kind": "TypeAnnotation",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "TuplePatternElement": {
+    "comment": [
+      "tuple-pattern-element -> identifier? ':' pattern ','?"
+    ],
+    "kind": "Syntax",
+    "children": [
+      {
+        "LabelName": {
+          "kind": "IdentifierToken",
+          "optional": true
+        }
+      },
+      {
+        "LabelColon": {
+          "kind": "ColonToken",
+          "optional": true
+        }
+      },
+      {
+        "Pattern": {
+          "kind": "Pattern"
+        }
+      },
+      {
+        "Comma": {
+          "kind": "CommaToken",
+          "optional": true
+        }
+      }
+    ]
+  },
+  "ExpressionPattern": {
+    "comment": [
+      "expr-pattern -> expr"
+    ],
+    "kind": "Pattern",
+    "children": [
+      {
+        "Expression": {
+          "kind": "Expr"
+        }
+      }
+    ]
+  },
+  "TuplePatternElementList": {
+    "comment": [
+      "tuple-pattern-element-list -> tuple-pattern-element tuple-pattern-element-list?"
+    ],
+    "kind": "SyntaxCollection",
+    "element": "TuplePatternElement"
+  },
+  "ValueBindingPattern": {
+    "comment": [
+      "value-binding-pattern -> 'let' pattern",
+      "                       | 'var' pattern"
+    ],
+    "kind": "Pattern",
+    "children": [
+      {
+        "LetOrVarKeyword": {
+          "kind": "Token",
+          "choices": [
+            "LetToken",
+            "VarToken"
+          ]
+        }
+      },
+      {
+        "ValuePattern": {
+          "kind": "Pattern"
+        }
+      }
+    ]
+  }
+}
