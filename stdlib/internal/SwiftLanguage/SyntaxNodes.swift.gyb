@@ -1,0 +1,101 @@
+%{
+  # -*- mode: Swift -*-
+  from gyb_syntax_support import *
+  NODE_MAP = create_node_map()
+  # Ignore the following admonition it applies to the resulting .cpp file only
+}%
+//// Automatically Generated From SyntaxNodes.swift.gyb.
+//// Do Not Edit Directly!
+//===------------ SyntaxNodes.swift - Syntax Node definitions -------------===//
+//
+// This source file is part of the Swift.org open source project
+//
+// Copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
+// Licensed under Apache License v2.0 with Runtime Library Exception
+//
+// See https://swift.org/LICENSE.txt for license information
+// See https://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
+//
+//===----------------------------------------------------------------------===//
+
+% for node in SYNTAX_NODES:
+public class ${node.name}: ${node.base_type} {
+%   if node.children:
+  enum Cursor: Int {
+%   for child in node.children:
+    case ${child.swift_name}
+%   end
+  }
+%   end
+
+  override class var kind: SyntaxKind {
+    return .${node.swift_syntax_kind}
+  }
+
+%   if node.requires_validation():
+#if DEBUG
+  override func validate() {
+    if isMissing { return }
+    precondition(raw.layout.count == ${len(node.children)})
+%     for child in node.children:
+
+    let _${child.swift_name} = raw[Cursor.${child.swift_name}]
+%       if child.token_choices:
+%         choices = ["." + choice.swift_kind() for choice in child.token_choices]
+    var foundValid${child.name} = false
+%         for choice in choices:
+    if case .token(${choice}, _, _, _) = _${child.swift_name}.kind {
+      found = true
+    }
+%         end
+    precondition(found,
+      "expected one of [${', '.join(choices)}] for \(${child.swift_name}) " + 
+      "in node of kind \(raw.kind)")
+%       end
+%       if child.main_token() and child.text_choices:
+%         token_kind = child.main_token().swift_kind()
+%         choices = ", ".join("\"%s\"" % choice
+%                             for choice in child.text_choices)
+    syntaxAssertChildTokenText(raw, Cursor.${child.swift_name},
+                               .${token_kind}, ${choices})
+%       else:
+    syntaxAssertChildKind(raw, Cursor.${child.swift_name},
+                          .${child.swift_syntax_kind})
+%       end
+%     end
+  }
+#endif
+%   end
+%   for child in node.children:
+
+%     if child.is_optional:
+  var ${child.swift_name}: ${child.type_name}? {
+    guard raw[Cursor.${child.swift_name}].isPresent else { return nil }
+    return ${child.type_name}(root: root,
+      data: data.cachedChild(at: Cursor.${child.swift_name}))
+  }
+%     else:
+  var ${child.swift_name}: ${child.type_name} {
+    return ${child.type_name}(root: root,
+      data: data.cachedChild(at: Cursor.${child.swift_name}))
+  }
+%     end
+%     child_node = NODE_MAP.get(child.syntax_kind)
+%     if child_node and child_node.is_syntax_collection():
+%       child_elt = child_node.collection_element_name
+%       child_elt_type = child_node.collection_element_type
+
+  func add${child_elt}(${child_elt_type} ${child_elt}) -> ${node.name} {
+    let childRaw = raw[${child.swift_name}].appending(${child_elt}.raw)
+    return data.replacingChild(childRaw, at: Cursor.${child.swift_name})
+  }
+%     end
+
+  func with${child.name}(_ new${child.type_name}: ${child.type_name}) {
+    let raw = new${child.type_name}.raw ?? ${make_missing_swift_child(child)}
+    return data.replacingChild(raw, at: Cursor.${child.swift_name})
+  }
+%   end
+}
+
+% end

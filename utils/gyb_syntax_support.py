@@ -2,6 +2,7 @@ from __future__ import print_function
 import json
 import os
 import sys
+import datetime
 from collections import OrderedDict
 
 """
@@ -21,14 +22,12 @@ All Syntax token definitions as Token objects.
 """
 SYNTAX_TOKENS = {}
 
-
 def error(msg):
     """
     Prints the provided error to stderr and exits with a non-zero exit code.
     """
     print("error: %s" % msg, file=sys.stderr)
     sys.exit(-1)
-
 
 class Child(object):
     """
@@ -40,6 +39,10 @@ class Child(object):
         self.syntax_kind = props.get("kind")
         self.type_name = kind_to_type(self.syntax_kind)
 
+        # In Swift, these names have the first word lowercased.
+        self.swift_name = lowercase_first_word(name)
+        self.swift_syntax_kind = lowercase_first_word(self.syntax_kind)
+
         # If the child has "token" anywhere in the kind, it's considered
         # a token node. Grab the existing reference to that token from the
         # global list.
@@ -48,7 +51,7 @@ class Child(object):
         self.token = SYNTAX_TOKENS.get(self.token_kind)
 
         self.is_optional = props.get("optional", False)
-
+        
         # A restricted set of token kinds that will be accepted for this
         # child.
         self.token_choices = []
@@ -81,7 +84,6 @@ class Child(object):
             return self.token_choices[0]
         return None
 
-
 class Node(object):
     """
     A Syntax node, possibly with children.
@@ -92,24 +94,25 @@ class Node(object):
     def __init__(self, kind, props):
         self.name = kind_to_type(kind)
         self.syntax_kind = kind
+        self.swift_syntax_kind = lowercase_first_word(self.syntax_kind)
 
         self.children = [Child(list(child_dict.keys())[0],
                                list(child_dict.values())[0],
                                kind)
-                         for child_dict in props.get("children", [])]
+                            for child_dict in props.get("children", [])]
         self.base_kind = props.get("kind")
         self.base_type = kind_to_type(self.base_kind)
         self.comment = "\n".join(props.get("comment", []))
 
         if self.base_kind not in SYNTAX_BASE_KINDS:
             error("unknown base kind '%s' for node '%s'" % 
-                  (self.base_kind, self.syntax_kind))
+                    (self.base_kind, self.syntax_kind))
 
         self.collection_element = props.get("element", "")
         # If there's a preferred name for the collection element that differs
         # from its supertype, use that.
         self.collection_element_name = props.get("element_name",
-                                                 self.collection_element)
+            self.collection_element)
         self.collection_element_type = kind_to_type(self.collection_element)
 
     def is_base(self):
@@ -141,9 +144,8 @@ class Node(object):
         Returns `True` if this node should have a builder associated.
         """
         return not self.is_base() and \
-            not self.is_unknown() and \
-            not self.is_syntax_collection()
-
+               not self.is_unknown() and \
+               not self.is_syntax_collection()
 
 class Token(object):
     """
@@ -155,12 +157,44 @@ class Token(object):
         self.text = props.get("text", "")
         self.is_keyword = props.get("is_keyword", False)
 
+    def swift_kind(self):
+        base = lowercase_first_word(self.name)
+        if self.is_keyword:
+            return base + "Keyword"
+        return base
+
+    def swift_make_name(self):
+        base = lowercase_first_word(self.name)
+        if self.is_keyword:
+            return base + "Keyword"
+        if self.text:
+            return base + "Token"
+        return base
+
+def make_missing_swift_child(child):
+    """
+    Generates a C++ call to make the raw syntax for a given Child object.
+    """
+    
+    if child.is_token():
+        token = child.main_token()
+        if token:
+            tok_kind = "." + token.swift_kind()
+            if not token.text:
+                tok_kind += '("")'
+        else:
+            tok_kind = ".unknown"
+        return 'RawSyntax.missingToken(%s)' % (tok_kind)
+    else:
+        missing_kind = "unknown" if child.syntax_kind == "Syntax" \
+                                 else child.swift_syntax_kind
+        return 'RawSyntax.missing(.%s)' % missing_kind
 
 def make_missing_child(child):
     """
     Generates a C++ call to make the raw syntax for a given Child object.
     """
-
+    
     if child.is_token():
         token = child.main_token()
         tok_kind = "tok::" + token.kind if token else "tok::unknown"
@@ -168,9 +202,8 @@ def make_missing_child(child):
         return 'RawTokenSyntax::missingToken(%s, "%s")' % (tok_kind, tok_text)
     else:
         missing_kind = "Unknown" if child.syntax_kind == "Syntax" \
-                       else child.syntax_kind
+                                 else child.syntax_kind
         return 'RawSyntax::missing(SyntaxKind::%s)' % missing_kind
-
 
 def kind_to_type(kind):
     """
@@ -185,6 +218,28 @@ def kind_to_type(kind):
         return "TokenSyntax"
     return kind + "Syntax"
 
+def lowercase_first_word(name):
+    """
+    Lowercases the first N-1 contiguous uppercase characters in the provided
+    camel case string.
+
+    URL -> url
+    URLString -> urlString
+    XMLHTTP -> xmlhttp
+    HelloWorld -> helloWorld
+    """
+    word_index = 0
+    threshold_index = 1
+    for c in name:
+        if c.islower():
+            if word_index > threshold_index:
+                word_index -= 1
+            break
+        word_index += 1
+    if word_index == 0:
+        return name
+    return name[:word_index].lower() + name[word_index:]
+
 
 def json_path(kind):
     """
@@ -194,7 +249,6 @@ def json_path(kind):
     current_path = os.path.dirname(os.path.abspath(__file__))
     syntax_dir = os.path.join(current_path, "..", "include", "swift", "Syntax")
     return os.path.join(syntax_dir, "%sSyntax.json" % kind)
-
 
 def load_syntax_tokens():
     """
@@ -206,21 +260,19 @@ def load_syntax_tokens():
     with open(json_path("Token")) as tok_file:
         tok_dicts = json.load(tok_file, object_pairs_hook=OrderedDict)
         SYNTAX_TOKENS = {name + "Token": Token(name, props)
-                         for (name, props) in tok_dicts.items()}
-
+                            for (name, props) in tok_dicts.items()}
 
 def load_all_syntax_nodes():
     """
     Loads all syntax nodes from all JSON files into an array.
     """
     names = [
-        "Common", "Decl", "Expr", "Generic", 
-        "Stmt", "Type", "Attribute", "Pattern"
+      "Common", "Decl", "Expr", "Generic", 
+      "Stmt", "Type", "Attribute", "Pattern"
     ]
     global SYNTAX_NODES
     for name in names:
-        SYNTAX_NODES += load_syntax_json(json_path(name))
-
+      SYNTAX_NODES += load_syntax_json(json_path(name))
 
 def load_syntax_json(path):
     """
@@ -230,14 +282,12 @@ def load_syntax_json(path):
         node_dicts = json.load(json_file, object_pairs_hook=OrderedDict)
         return [Node(name, props) for (name, props) in node_dicts.items()]
 
-
 def create_node_map():
     """
     Returns a lookup table that maps the syntax kind of a node to its
     definition. 
     """
     return {node.syntax_kind: node for node in SYNTAX_NODES}
-
 
 load_syntax_tokens()
 load_all_syntax_nodes()
