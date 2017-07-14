@@ -1,0 +1,32 @@
+{
+  "Decl": {
+    "kind": "Syntax"
+  },
+  "UnknownDecl": {
+    "kind": "Decl" 
+  },
+  "Expr": {
+    "kind": "Syntax"
+  },
+  "UnknownExpr": {
+    "kind": "Expr" 
+  },
+  "Stmt": {
+    "kind": "Syntax" 
+  },
+  "UnknownStmt": {
+    "kind": "Stmt" 
+  },
+  "Type": {
+    "kind": "Syntax" 
+  },
+  "UnknownType": {
+    "kind": "Type" 
+  },
+  "Pattern": {
+    "kind": "Syntax" 
+  },
+  "UnknownPattern": {
+    "kind": "Pattern" 
+  }
+}

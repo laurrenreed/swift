@@ -101,6 +101,12 @@ endfunction()
 #   destination; this is useful for generated include files.
 function(handle_gyb_sources dependency_out_var_name sources_var_name arch)
   set(extra_gyb_flags "")
+  set(options)
+  set(single_value_args)
+  set(multi_value_args DEPENDS)
+  cmake_parse_arguments(GYB
+    "${options}" "${single_value_args}" "${multi_value_args}" ${ARGN})
+
   if (arch)
     set_if_arch_bitness(ptr_size
       ARCH "${arch}"
@@ -158,7 +164,7 @@ function(handle_gyb_sources dependency_out_var_name sources_var_name arch)
           SOURCE "${src}"
           OUTPUT "${output_file_name}"
           FLAGS ${extra_gyb_flags}
-          DEPENDS "${gyb_extra_sources}"
+          DEPENDS "${gyb_extra_sources}" "${GYB_DEPENDS}"
           COMMENT "with ptr size = ${ptr_size}")
       list(APPEND dependency_targets "${dependency_target}")
     endif()
