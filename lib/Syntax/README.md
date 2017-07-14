@@ -477,6 +477,7 @@ A couple of interesting points and reminders:
 ## API Generation
 
 The libSyntax APIs are generated automatically from a set of description files
+<<<<<<< HEAD
 written in Python. These files are located in `utils/gyb_syntax_support/`, and
 all follow the same schema.
 

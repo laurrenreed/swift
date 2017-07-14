@@ -12,5 +12,10 @@ add_swift_library(swiftSyntax STATIC
   Syntax.cpp
   SyntaxData.cpp
   UnknownSyntax.cpp
+<<<<<<< HEAD
+=======
+  GYB_DEPENDS
+    "${SWIFT_SYNTAX_NODE_DEFINITIONS}"
+>>>>>>> Generate libSyntax API from JSON
   DEPENDS
     swift-syntax-generated-headers)
