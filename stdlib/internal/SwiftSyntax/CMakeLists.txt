@@ -15,8 +15,6 @@ add_swift_library(swiftSwiftSyntax ${SWIFT_STDLIB_LIBRARY_BUILD_TYPES} IS_STDLIB
   Trivia.swift
 
   SWIFT_MODULE_DEPENDS Foundation
-  GYB_DEPENDS
-    "${SWIFT_SYNTAX_NODE_DEFINITIONS}"
   SWIFT_COMPILE_FLAGS ${STDLIB_SIL_SERIALIZE_ALL} -parse-stdlib
   INSTALL_IN_COMPONENT stdlib-experimental)
 

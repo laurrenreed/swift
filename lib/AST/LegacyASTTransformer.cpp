@@ -10,12 +10,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-<<<<<<< HEAD:lib/AST/LegacyASTTransformer.cpp
 #include "swift/AST/LegacyASTTransformer.h"
-=======
 #include "swift/Syntax/SyntaxNodes.h"
-#include "swift/Syntax/LegacyASTTransformer.h"
->>>>>>> Generate libSyntax API:lib/Syntax/LegacyASTTransformer.cpp
 #include "swift/Syntax/References.h"
 #include "swift/Syntax/SyntaxFactory.h"
 #include "swift/Syntax/TokenSyntax.h"
