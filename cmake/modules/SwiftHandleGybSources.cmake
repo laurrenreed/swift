@@ -164,7 +164,7 @@ function(handle_gyb_sources dependency_out_var_name sources_var_name arch)
           SOURCE "${src}"
           OUTPUT "${output_file_name}"
           FLAGS ${extra_gyb_flags}
-          DEPENDS "${gyb_extra_sources}" "${GYB_DEPENDS}"
+          DEPENDS "${gyb_extra_sources}"
           COMMENT "with ptr size = ${ptr_size}")
       list(APPEND dependency_targets "${dependency_target}")
     endif()
