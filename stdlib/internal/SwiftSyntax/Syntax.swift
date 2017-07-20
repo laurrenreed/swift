@@ -106,8 +106,8 @@ public class Syntax: CustomStringConvertible {
   ///            is not a child at that index in the node.
   public func child(at index: Int) -> Syntax? {
     guard raw.layout.indices.contains(index) else { return nil }
-    return raw.layout[index].makeSyntax(root: _root, indexInParent: index,
-                                        parent: data)
+    if raw.layout[index].isMissing { return nil }
+    return Syntax.make(root: _root, data: data.cachedChild(at: index))
   }
 
   /// A source-accurate description of this node.

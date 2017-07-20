@@ -35,6 +35,7 @@ public class ${Builder} {
 %         child_elt = child_node.collection_element_name
 %         child_elt_type = child_node.collection_element_type
 
+  @discardableResult
   public func add${child_elt}(_ elt: ${child_elt_type}) -> ${Builder} {
     let idx = ${node.name}.Cursor.${child.swift_name}.rawValue
     layout[idx] = layout[idx].appending(elt.raw)
@@ -42,6 +43,7 @@ public class ${Builder} {
   }
 %       else:
 
+  @discardableResult
   public func use${child.name}(
     _ node: ${child.type_name}) -> ${Builder}  {
     let idx = ${node.name}.Cursor.${child.swift_name}.rawValue

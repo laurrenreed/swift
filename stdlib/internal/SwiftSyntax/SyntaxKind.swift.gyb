@@ -53,6 +53,16 @@ internal enum SyntaxKind: String, Codable {
 }
 
 extension Syntax {
+  /// Creates a Syntax node from the provided RawSyntax using the appropriate
+  /// Syntax type, as specified by its kind.
+  /// - Parameters:
+  ///   - raw: The raw syntax with which to create this node.
+  ///   - root: The root of this tree, or `nil` if the new node is the root.
+  static func fromRaw(_ raw: RawSyntax) -> Syntax {
+    let data = SyntaxData(raw: raw)
+    return make(root: nil, data: data)
+  }
+
   /// Creates a Syntax node from the provided SyntaxData using the appropriate
   /// Syntax type, as specified by its kind.
   /// - Parameters:

@@ -2,9 +2,10 @@
 // REQUIRES: executable_test
 
 import StdlibUnittest
-@testable import SwiftSyntax
 import Foundation
 import Dispatch
+
+@testable import SwiftSyntax
 
 var AtomicCacheAPI = TestSuite("AtomicCacheAPI")
 
@@ -51,3 +52,5 @@ AtomicCacheAPI.test("TwoAccesses") {
   expectEqual(d1, d2)
   expectEqual(d1, final)
 }
+
+runAllTests()

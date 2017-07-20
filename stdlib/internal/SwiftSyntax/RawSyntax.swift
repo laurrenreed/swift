@@ -12,11 +12,6 @@
 
 import Foundation
 
-public enum SourcePresence: String, Codable {
-  case present = "Present"
-  case missing = "Missing"
-}
-
 /// Represents the raw tree structure underlying the syntax tree. These nodes
 /// have no notion of identity and only provide structure to the tree. They
 /// are immutable and can be freely shared between syntax nodes.
@@ -164,20 +159,6 @@ indirect enum RawSyntax: Codable {
         piece.print(to: &stream)
       }
     }
-  }
-
-  /// Creates a Syntax node from this RawSyntax using the appropriate Syntax
-  /// type, as specified by its kind.
-  func makeRootSyntax() -> Syntax {
-    return makeSyntax(root: nil, indexInParent: 0, parent: nil)
-  }
-
-  func makeSyntax(root: SyntaxData?, indexInParent: Int, 
-                  parent: SyntaxData?) -> Syntax {
-    let data = parent?.cachedChild(at: indexInParent) ??
-              SyntaxData(raw: self, indexInParent: indexInParent,
-                         parent: parent)
-    return Syntax.make(root: root, data: data)
   }
 
   /// Returns the child at the provided cursor in the layout.
