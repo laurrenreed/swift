@@ -65,7 +65,7 @@ EXPR_NODES = [
     # !true
     Node('PrefixOperatorExpr', kind='Expr',
          children=[
-             Child('Operator', kind='PrefixOperatorToken',
+             Child('OperatorToken', kind='PrefixOperatorToken',
                    is_optional=True),
              Child('PostfixExpression', kind='Expr'),
          ]),

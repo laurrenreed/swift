@@ -12,6 +12,11 @@
 
 import Foundation
 
+public enum SourcePresence: String, Codable {
+  case present = "Present"
+  case missing = "Missing"
+}
+
 /// Represents the raw tree structure underlying the syntax tree. These nodes
 /// have no notion of identity and only provide structure to the tree. They
 /// are immutable and can be freely shared between syntax nodes.
@@ -47,8 +52,18 @@ indirect enum RawSyntax: Codable {
     }
   }
 
+  /// Whether this node is present in the original source.
+  var isPresent: Bool {
+    return presence == .present
+  }
+
+  /// Whether this node is missing from the original source.
+  var isMissing: Bool {
+    return presence == .missing
+  }
+
   /// Keys for serializing RawSyntax nodes.
-  enum CodingKeys: CodingKey {
+  enum CodingKeys: String, CodingKey {
     // Keys for the `node` case
     case kind, layout, presence
     
@@ -94,8 +109,8 @@ indirect enum RawSyntax: Codable {
   ///   - layout: The children of this node.
   /// - Returns: A new RawSyntax `.node` with the provided kind and layout, with
   ///            `.missing` source presence.
-  static func missing(_ kind: SyntaxKind, layout: [RawSyntax]) -> RawSyntax {
-    return .node(kind, layout, .missing)
+  static func missing(_ kind: SyntaxKind) -> RawSyntax {
+    return .node(kind, [], .missing)
   }
 
   /// Creates a RawSyntax token that's marked missing in the source with the
@@ -127,7 +142,7 @@ indirect enum RawSyntax: Codable {
   func appending(_ child: RawSyntax) -> RawSyntax {
     var newLayout = layout
     newLayout.append(child)
-    return replacingLayout()
+    return replacingLayout(newLayout)
   }
 
   /// Prints the RawSyntax node, and all of its children, to the provided
@@ -157,20 +172,12 @@ indirect enum RawSyntax: Codable {
     return makeSyntax(root: nil, indexInParent: 0, parent: nil)
   }
 
-  /// Creates a Syntax node from this RawSyntax using the appropriate Syntax
-  /// type, as specified by its kind.
-  /// - Parameters:
-  ///   - root: The root of this tree, or `nil` if the new node is the root.
-  ///   - indexInParent: The index of this node in the parent. Ignored if
-  ///                    the parent provided is `nil`.
-  ///   - parent: The parent data for this new node, or `nil` if this node is
-  ///             the root.
-  func makeSyntax(root: SyntaxData?, indexInParent: Int,
+  func makeSyntax(root: SyntaxData?, indexInParent: Int, 
                   parent: SyntaxData?) -> Syntax {
     let data = parent?.cachedChild(at: indexInParent) ??
               SyntaxData(raw: self, indexInParent: indexInParent,
                          parent: parent)
-    return kind.syntaxType.init(root: root ?? data, data: data)
+    return Syntax.make(root: root, data: data)
   }
 
   /// Returns the child at the provided cursor in the layout.

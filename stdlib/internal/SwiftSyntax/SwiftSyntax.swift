@@ -13,7 +13,40 @@
 //===----------------------------------------------------------------------===//
 
 import Foundation
+#if os(macOS)
+import Darwin
+#elseif os(Linux)
+import Glibc
+#endif
+
+func findDylib(dsohandle: UnsafeRawPointer = #dsohandle) -> URL? {
+  var info = dl_info()
+  if dladdr(dsohandle, &info) == 0 {
+    return nil
+  }
+  let path = String(cString: info.dli_fname)
+  return URL(fileURLWithPath: path)
+}
+
+func locateSwiftc() -> URL? {
+  guard let dylibPath = findDylib() else { return nil }
+  let newPath = dylibPath.deletingLastPathComponent()
+                         .deletingLastPathComponent()
+                         .appendingPathComponent("bin")
+                         .appendingPathComponent("swiftc")
+  return newPath
+}
+
+public enum SyntaxError: Error {
+  case couldNotFindSwiftc
+  case invalidFile
+}
 
 extension Syntax {
-  public static func parse(_ url: URL)
+  public static func parse(_ url: URL) throws -> Syntax {
+    guard let swiftcPath = locateSwiftc() else {
+      throw SyntaxError.couldNotFindSwiftc
+    }
+    throw SyntaxError.invalidFile
+  }
 }

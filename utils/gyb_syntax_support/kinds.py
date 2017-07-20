@@ -18,3 +18,17 @@ def kind_to_type(kind):
     if kind.endswith("Token"):
         return "TokenSyntax"
     return kind + "Syntax"
+
+
+def lowercase_first_word(name):
+    word_index = 0
+    threshold_index = 1
+    for c in name:
+        if c.islower():
+            if word_index > threshold_index:
+                word_index -= 1
+            break
+        word_index += 1
+    if word_index == 0:
+        return name
+    return name[:word_index].lower() + name[word_index:]

@@ -28,30 +28,33 @@ public class ${Builder} {
     ${make_missing_swift_child(child)},
 %     end
   ]
+  public init() {}
 %     for child in node.children:
 %       child_node = NODE_MAP.get(child.syntax_kind)
-%       raw_ref = "layout[%s.Cursor.%s]" % (node.name, child.swift_name)
 %       if child_node and child_node.is_syntax_collection():
 %         child_elt = child_node.collection_element_name
 %         child_elt_type = child_node.collection_element_type
 
-  public func add${child_elt}(_ elt: ${child_elt_type}) -> ${Builder}  {
-    ${raw_ref} = ${raw_ref}.appending(elt.raw)
+  public func add${child_elt}(_ elt: ${child_elt_type}) -> ${Builder} {
+    let idx = ${node.name}.Cursor.${child.swift_name}.rawValue
+    layout[idx] = layout[idx].appending(elt.raw)
     return self
   }
 %       else:
 
   public func use${child.name}(
-    _ ${child.swift_name}: ${child.type_name}) -> ${Builder}  {
-    ${raw_ref} = ${child.swift_name}.raw
+    _ node: ${child.type_name}) -> ${Builder}  {
+    let idx = ${node.name}.Cursor.${child.swift_name}.rawValue
+    layout[idx] = node.raw
     return self
   }
 %       end
 %     end
 
-  func build() -> ${node.name} {
-    return SyntaxFactory.make(.node(.${node.swift_syntax_kind},
-                                    layout, .present))
+  public func build() -> ${node.name} {
+    let data = SyntaxData(raw: .node(.${node.swift_syntax_kind},
+                                     layout, .present))
+    return ${node.name}(root: data, data: data)
   }
 }
 

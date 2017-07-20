@@ -17,14 +17,14 @@ import Foundation
 /// iteration over the children through its `children` property.
 public class Syntax: CustomStringConvertible {
   /// The root of the tree this node is currently in.
-  private let _root: SyntaxData
+  internal let _root: SyntaxData
   
   /// The data backing this node.
   /// - note: This is unowned, because the reference to the root data keeps it
   ///         alive. This means there is an implicit relationship -- the data
   ///         property must be a descendent of the root. This relationship must
   ///         be preserved in all circumstances where Syntax nodes are created.
-  private unowned var data: SyntaxData { get }
+  internal unowned var data: SyntaxData
 
   internal class var kind: SyntaxKind {
     return .unknown
@@ -37,10 +37,12 @@ public class Syntax: CustomStringConvertible {
 #endif
 
   /// Creates a Syntax node from the provided root and data.
-  private init(root: SyntaxData, data: SyntaxData) {
-    self.root = root
+  internal init(root: SyntaxData, data: SyntaxData) {
+    self._root = root
     self.data = data
+#if DEBUG
     validate()
+#endif
   }
 
   /// Access the raw syntax assuming the node is a Syntax.
@@ -62,34 +64,34 @@ public class Syntax: CustomStringConvertible {
   }
 
   public var isExpr: Bool {
-    return kind.isExpr
+    return raw.kind.isExpr
   }
   
   public var isDecl: Bool {
-    return kind.isDecl
+    return raw.kind.isDecl
   }
 
   public var isStmt: Bool {
-    return kind.isStmt
+    return raw.kind.isStmt
   }
 
   public var isType: Bool {
-    return kind.isType
+    return raw.kind.isType
   }
 
   public var isPattern: Bool {
-    return kind.isPattern
+    return raw.kind.isPattern
   }
 
   /// The parent of this syntax node, or `nil` if this node is the root.
   public var parent: Syntax? {
     guard let parentData = data.parent else { return nil }
-    return parentData.raw.kind.syntaxType.init(root: rootData, data: parentData)
+    return Syntax.make(root: _root, data: parentData)
   }
 
   /// The root of the tree in which this node resides.
   public var root: Syntax {
-    return _root.raw.kind.syntaxType.init(root: _root, data: _root)
+    return Syntax.make(root: _root,  data: _root)
   }
 
   /// Prints the raw value of this node to the provided stream.
@@ -104,7 +106,7 @@ public class Syntax: CustomStringConvertible {
   ///            is not a child at that index in the node.
   public func child(at index: Int) -> Syntax? {
     guard raw.layout.indices.contains(index) else { return nil }
-    return raw.layout[index].makeSyntax(root: root, indexInParent: index,
+    return raw.layout[index].makeSyntax(root: _root, indexInParent: index,
                                         parent: data)
   }
 
@@ -117,7 +119,7 @@ public class Syntax: CustomStringConvertible {
 }
 
 /// Determines if two nodes are equal to each other.
-func ==(lhs: Syntax, rhs: Syntax) -> Bool {
+public func ==<T: Syntax>(lhs: T, rhs: T) -> Bool {
   return lhs.data === rhs.data
 }
 
@@ -130,7 +132,7 @@ public class TokenSyntax: Syntax {
     return tokenKind.text
   }
 
-  internal class var kind: SyntaxKind {
+  override internal class var kind: SyntaxKind {
     return .token
   }
 
@@ -138,16 +140,18 @@ public class TokenSyntax: Syntax {
     guard case let .token(kind, _, trailingTrivia, presence) = raw else {
       fatalError("TokenSyntax must have token as its raw")
     }
-    return data.replacingSelf(.token(kind, leadingTrivia,
-                                     trailingTrivia, presence))
+    let (root, newData) = data.replacingSelf(.token(kind, leadingTrivia,
+                                                    trailingTrivia, presence))
+    return TokenSyntax(root: root, data: newData)
   }
 
   public func withTrailingTrivia(_ trailingTrivia: Trivia) -> TokenSyntax {
     guard case let .token(kind, leadingTrivia, _, presence) = raw else {
       fatalError("TokenSyntax must have token as its raw")
     }
-    return data.replacingSelf(.token(kind, leadingTrivia,
-                                     trailingTrivia, presence))
+    let (root, newData) = data.replacingSelf(.token(kind, leadingTrivia,
+                                                    trailingTrivia, presence))
+    return TokenSyntax(root: root, data: newData)
   }
 
   public var leadingTrivia: Trivia {

@@ -2,7 +2,7 @@
   # -*- mode: Swift -*-
   from gyb_syntax_support import *
   NODE_MAP = create_node_map()
-  # Ignore the following admonition it applies to the resulting .cpp file only
+  # Ignore the following admonition it applies to the resulting .swift file only
 }%
 //// Automatically Generated From SyntaxNodes.swift.gyb.
 //// Do Not Edit Directly!
@@ -19,7 +19,11 @@
 //===----------------------------------------------------------------------===//
 
 % for node in SYNTAX_NODES:
-public class ${node.name}: ${node.base_type} {
+%   base_type = node.base_type
+%   if node.collection_element:
+%     base_type += '<' + node.collection_element_type + '>'
+%   end
+public class ${node.name}: ${base_type} {
 %   if node.children:
   enum Cursor: Int {
 %   for child in node.children:
@@ -49,7 +53,7 @@ public class ${node.name}: ${node.base_type} {
     }
 %         end
     precondition(found,
-      "expected one of [${', '.join(choices)}] for \(${child.swift_name}) " + 
+      "expected one of [${', '.join(choices)}] for '${child.swift_name}' " + 
       "in node of kind \(raw.kind)")
 %       end
 %       if child.main_token() and child.text_choices:
@@ -69,14 +73,14 @@ public class ${node.name}: ${node.base_type} {
 %   for child in node.children:
 
 %     if child.is_optional:
-  var ${child.swift_name}: ${child.type_name}? {
+  public var ${child.swift_name}: ${child.type_name}? {
     guard raw[Cursor.${child.swift_name}].isPresent else { return nil }
-    return ${child.type_name}(root: root,
+    return ${child.type_name}(root: _root,
       data: data.cachedChild(at: Cursor.${child.swift_name}))
   }
 %     else:
-  var ${child.swift_name}: ${child.type_name} {
-    return ${child.type_name}(root: root,
+  public var ${(child.swift_name)}: ${child.type_name} {
+    return ${child.type_name}(root: _root,
       data: data.cachedChild(at: Cursor.${child.swift_name}))
   }
 %     end
@@ -85,15 +89,20 @@ public class ${node.name}: ${node.base_type} {
 %       child_elt = child_node.collection_element_name
 %       child_elt_type = child_node.collection_element_type
 
-  func add${child_elt}(${child_elt_type} ${child_elt}) -> ${node.name} {
-    let childRaw = raw[${child.swift_name}].appending(${child_elt}.raw)
-    return data.replacingChild(childRaw, at: Cursor.${child.swift_name})
+  public func add${child_elt}(_ elt: ${child_elt_type}) -> ${node.name} {
+    let childRaw = raw[Cursor.${child.swift_name}].appending(elt.raw)
+    let (root, newData) = data.replacingChild(childRaw,
+                                              at: Cursor.${child.swift_name})
+    return ${node.name}(root: root, data: newData)
   }
 %     end
 
-  func with${child.name}(_ new${child.type_name}: ${child.type_name}) {
-    let raw = new${child.type_name}.raw ?? ${make_missing_swift_child(child)}
-    return data.replacingChild(raw, at: Cursor.${child.swift_name})
+  public func with${child.name}(
+    _ new${child.type_name}: ${child.type_name}?) -> ${node.name} {
+    let raw = new${child.type_name}?.raw ?? ${make_missing_swift_child(child)}
+    let (root, newData) = data.replacingChild(raw,
+                                              at: Cursor.${child.swift_name})
+    return ${node.name}(root: root, data: newData)
   }
 %   end
 }

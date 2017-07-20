@@ -477,11 +477,7 @@ LegacyASTTransformer::visitReturnStmt(ReturnStmt *S,
                                   S->getReturnLoc(), BufferID, Tokens);
   auto Semicolon = findTokenSyntax(tok::semi, ";", SourceMgr,
                                    S->getEndLoc(), BufferID, Tokens);
-<<<<<<< HEAD:lib/AST/LegacyASTTransformer.cpp
   auto Result = transformAST(S->getResult(), ASTMap, SourceMgr, BufferID,
-=======
-  auto Result = transformAST(S->getResult(), Sema, SourceMgr, BufferID,
->>>>>>> Generate libSyntax API:lib/Syntax/LegacyASTTransformer.cpp
                              Tokens);
 
   if (!Result.hasValue()) {

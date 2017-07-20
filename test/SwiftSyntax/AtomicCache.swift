@@ -2,7 +2,7 @@
 // REQUIRES: executable_test
 
 import StdlibUnittest
-import SwiftSyntax
+@testable import SwiftSyntax
 import Foundation
 import Dispatch
 

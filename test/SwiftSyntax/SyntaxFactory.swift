@@ -5,25 +5,14 @@ import SwiftSyntax
 import StdlibUnittest
 
 func cannedStructDecl() -> StructDeclSyntax {
-  let keyword = SyntaxFactory.makeToken(kind: .kw_struct,
-                                        trailingTrivia: .spaces(1))
-
-  let name = SyntaxFactory.makeToken(kind: .identifier("Foo"),
-                                      trailingTrivia: .spaces(1))
-
-  let lBrace = SyntaxFactory.makeToken(kind: .l_brace)
-
-  let members = SyntaxFactory.makeStructDeclMembers(members: [],
-                                                    presence: .missing)
-
-  let rBrace = SyntaxFactory.makeToken(kind: .r_brace,
-                                       leadingTrivia: .newlines(1))
-
-  return SyntaxFactory.makeStructDecl(structKeyword: keyword,
-                                      identifier: name,
-                                      leftBrace: lBrace,
-                                      members: members,
-                                      rightBrace: rBrace)
+  let builder = StructDeclSyntaxBuilder()
+  builder.useStructKeyword(
+    SyntaxFactory.makeStructKeyword(trailingTrivia: .spaces(1)))
+         .useIdentifier(.makeIdentifier("Foo", trailingTrivia: .spaces(1)))
+         .useLeftBrace(SyntaxFactory.makeLeftBraceToken())
+         .useRightBrace(
+           SyntaxFactory.makeRightBraceToken(leadingTrivia: .newlines(1)))
+  return builder.build()
 }
 
 var SyntaxFactoryAPI = TestCase("SyntaxFactoryAPI")
@@ -72,7 +61,6 @@ SyntaxFactoryAPI.test("Generated") {
               }
               """)
 }
-
 
 SyntaxFactoryAPI.test("TokenSyntax") {
   let tok = SyntaxFactory.makeToken(kind: .kw_struct)

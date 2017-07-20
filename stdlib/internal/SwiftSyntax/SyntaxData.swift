@@ -38,7 +38,8 @@ final class SyntaxData: Equatable {
   ///   - indexInParent: The index in the parent's layout where this node will
   ///                    reside.
   ///   - parent: The parent of this node, or `nil` if this node is the root.
-  required init(raw: RawSyntax, indexInParent: Int = 0, parent: SyntaxData?) {
+  required init(raw: RawSyntax, indexInParent: Int = 0, 
+                parent: SyntaxData? = nil) {
     self.raw = raw
     self.indexInParent = indexInParent
     self.parent = parent
@@ -107,15 +108,6 @@ final class SyntaxData: Equatable {
   /// Creates a copy of `self` and recursively creates `SyntaxData` nodes up to
   /// the root.
   /// - parameter newRaw: The new RawSyntax that will back the new `Data`
-  /// - returns: A Syntax node with the provided `RawSyntax` backing it.
-  func replacingSelf<SyntaxType: Syntax>(_ newRaw: RawSyntax) -> SyntaxType {
-    let (root, data) = replacingSelf(newRaw)
-    return SyntaxType.init(root: root, data: data)
-  }
-
-  /// Creates a copy of `self` and recursively creates `SyntaxData` nodes up to
-  /// the root.
-  /// - parameter newRaw: The new RawSyntax that will back the new `Data`
   /// - returns: A tuple of both the new root node and the new data with the raw
   ///            layout replaced.
   func replacingSelf(
@@ -156,14 +148,15 @@ final class SyntaxData: Equatable {
   ///
   /// - Parameters:
   ///   - child: The raw syntax for the new child to replace.
-  ///   - cursor: The cursor pointing to where in the raw layout to place this
-  ///             child.
-  /// - Returns: A Syntax node of the appropriate type representing the child.
-  func replacingChild<CursorType: RawRepresentable, SyntaxType: Syntax>(
-    _ child: RawSyntax, at cursor: CursorType) -> SyntaxType
+  ///   - cursor: A cursor that points to the index of the child you wish to
+  ///             replace
+  /// - Returns: The new root node created by this operation, and the new child
+  ///            syntax data.
+  /// - SeeAlso: replacingSelf(_:)
+  func replacingChild<CursorType: RawRepresentable>(_ child: RawSyntax, 
+    at cursor: CursorType) -> (root: SyntaxData, newValue: SyntaxData)
     where CursorType.RawValue == Int {
-    let (root, data) = replacingChild(child, at: cursor.rawValue)
-    return SyntaxType.init(root: root, data: data)
+    return replacingChild(child, at: cursor.rawValue)
   }
 
   /// Creates the child's syntax data for the provided cursor.
