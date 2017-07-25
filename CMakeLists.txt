@@ -846,25 +846,6 @@ if(NOT DEFINED SWIFT_API_NOTES_INPUTS)
   message(FATAL_ERROR "API notes are not available in ${SWIFT_API_NOTES_PATH}")
 endif()
 
-#
-# Set up global CMake variables for libSyntax generation
-#
-set(swift_syntax_json_files
-    CommonSyntax.json
-    AttributeSyntax.json
-    TypeSyntax.json
-    DeclSyntax.json
-    ExprSyntax.json
-    GenericSyntax.json
-    TokenSyntax.json
-    PatternSyntax.json
-    StmtSyntax.json)
-set(SWIFT_SYNTAX_NODE_DEFINITIONS)
-foreach(json_file ${swift_syntax_json_files})
-  list(APPEND SWIFT_SYNTAX_NODE_DEFINITIONS
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/swift/Syntax/${json_file}")
-endforeach()
-
 # Add all of the subdirectories, where we actually do work.
 if(SWIFT_INCLUDE_TOOLS)
   add_subdirectory(include)
