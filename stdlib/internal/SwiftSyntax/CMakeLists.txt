@@ -5,14 +5,15 @@ add_swift_library(swiftSwiftSyntax ${SWIFT_STDLIB_LIBRARY_BUILD_TYPES} IS_STDLIB
   AtomicCache.swift
   RawSyntax.swift
   SourcePresence.swift
+  SwiftcInvocation.swift
   Syntax.swift
   SyntaxData.swift
   SyntaxChildren.swift
   SyntaxCollection.swift
   SyntaxBuilders.swift.gyb
   SyntaxFactory.swift.gyb
-  SyntaxNodes.swift.gyb
   SyntaxKind.swift.gyb
+  SyntaxNodes.swift.gyb
   TokenKind.swift.gyb
   Trivia.swift
 

@@ -126,6 +126,23 @@ DECL_NODES = [
              Child('Members', kind='StructMembers'),
              Child('RightBrace', kind='RightBraceToken'),
          ]),
+    
+    # decl-list = decl decl-list?
+    Node('DeclList', kind='SyntaxCollection',
+         element='Decl'),
+
+    # source-file = decl-list eof
+    Node('SourceFile', kind='Syntax',
+         children=[
+             Child('TopLevelDecls', kind='DeclList'),
+             Child('EOFToken', kind='EOFToken')
+         ]),
+
+    # top-level-code-decl = stmt-list
+    Node('TopLevelCodeDecl', kind='Decl',
+         children=[
+             Child('Body', kind='StmtList')
+         ]),
 
     # parameter ->
     # external-parameter-name? local-parameter-name ':'

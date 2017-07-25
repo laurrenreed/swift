@@ -7,22 +7,14 @@ import StdlibUnittest
 
 var ParseFile = TestSuite("ParseFile")
 
-ParseFile.test("RunSwiftc") {
-  var stdout = "", stderr = ""
-  expectDoesNotThrow({
-    let swiftcRunner = try SwiftcRunner()
-    (stdout, stderr) = swiftcRunner.invoke()
-  })
-  expectEqual(stdout, "")
-  expectEqual(stderr, "")
-}
-
 ParseFile.test("ParseSingleFile") {
-  expectThrows(ParserError.invalidFile, {
-    let currentFile = URL(fileURLWithPath: #file)
-    let parse = try Syntax.parse(currentFile)
-    print(parse)
-  })
+  let currentFile = URL(fileURLWithPath: #file)
+  do {
+    let parsed = try Syntax.parse(currentFile)
+    expectNil(parsed)
+  } catch {
+    expectEqual("", "\(error)")
+  }
 }
 
 runAllTests()

@@ -26,10 +26,6 @@ public class Syntax: CustomStringConvertible {
   ///         be preserved in all circumstances where Syntax nodes are created.
   internal unowned var data: SyntaxData
 
-  internal class var kind: SyntaxKind {
-    return .unknown
-  }
-
 #if DEBUG
   func validate() {
     // This is for subclasses to override to perform structural validation.
@@ -130,10 +126,6 @@ public class TokenSyntax: Syntax {
   /// The text of the token as written in the source code.
   public var text: String {
     return tokenKind.text
-  }
-
-  override internal class var kind: SyntaxKind {
-    return .token
   }
 
   public func withLeadingTrivia(_ leadingTrivia: Trivia) -> TokenSyntax {
